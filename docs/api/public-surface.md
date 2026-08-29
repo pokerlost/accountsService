@@ -7,7 +7,7 @@ This page is the authoritative manifest of HTTP endpoints present in a pristine 
 
 | Method and path | `operation_id` | Request | `response_model` | Published status and error responses |
 | --- | --- | --- | --- | --- |
-| `GET /` | `accountsservice.getRoot` | No parameters or body | `RootResponse` (`ApplicationResponse[None]`) | `200`: `RootResponse`; `500`: `ApplicationResponse[None]` |
+| `GET /` | `accounts.getRoot` | No parameters or body | `RootResponse` (`ApplicationResponse[None]`) | `200`: `RootResponse`; `500`: `ApplicationResponse[None]` |
 | `GET /openapi.get` | `openapi.get` | No parameters or body | `OpenAPIResponse` (`ApplicationResponse[dict[str, JSONValue]]`) | `200`: `OpenAPIResponse`; `500`: `ApplicationResponse[None]` |
 
 The table shows the generated `.env.example` values. The root path remains `/` when
