@@ -1,0 +1,244 @@
+# accountsService
+
+Before every task:
+
+1. Read `AGENTS.md`.
+2. Read `SERVICE.md`.
+3. Inspect the current repository and relevant implementation.
+4. Treat the latest direct user requirement as highest priority.
+5. Treat `SERVICE.md` as the source of truth for service-specific purpose and rules.
+6. Treat this file as the source of truth for shared PokerLost engineering conventions.
+
+Priority:
+
+```text
+latest direct user requirement
+→ SERVICE.md
+→ AGENTS.md
+→ older decisions
+```
+
+## General architecture
+
+- Keep transport, application, domain, configuration, observability, persistence, and CLI
+  responsibilities separated.
+- Do not introduce abstractions without a concrete use or copy business logic from other services.
+- PostgreSQL is the unconditional primary persistence layer.
+- Validate critical settings at startup and fail fast.
+- Do not commit or log secrets.
+
+## Documentation
+
+- Keep `README.md` as a landing page and `docs/index.md` as the documentation home.
+- Write technical documentation in English, keep one canonical page per concept, reference
+  repository files with repository-root paths in backticks, and list every page under `docs/` in
+  `docs/index.md`.
+- Do not use relative inter-file Markdown links. Only `http://`, `https://`, `mailto:`, and
+  same-document `#anchor` link destinations are allowed.
+- Document only the verified current state. Do not record prompts, chat notes, temporary plans,
+  invented checks, metrics, or guarantees in product documentation.
+- Every API change updates `docs/api/public-surface.md` and the relevant canonical API page;
+  wire-contract changes also update `docs/api/openapi-and-sdk.md`.
+- Follow `docs/development/documentation-style.md` and `docs/development/contributing.md`.
+- Before handoff, run `make check` and `make pre-commit`.
+
+## API
+
+- FastAPI is the HTTP framework.
+- `/` is the only path exception. Its operation ID comes from `Settings.root_operation`. The
+  OpenAPI publication path is `"/" + Settings.openapi_operation`; every other API operation path
+  is likewise exactly `"/" + operation_id`.
+- Every operation ID matches `^[a-z][A-Za-z0-9]*\.[a-z][A-Za-z0-9]*$`: exactly two segments and
+  one dot, with each segment starting with a lowercase ASCII letter and containing only ASCII
+  letters and digits. Use lowerCamelCase; underscores, hyphens, extra dots, and uppercase initial
+  characters are forbidden.
+- In each business route module, define one module-level `OPERATION` constant and derive both
+  `path=f"/{OPERATION}"` and `operation_id=OPERATION` from it. Use only `GET`, `POST`, `PUT`,
+  `PATCH`, or `DELETE`; prefer the SDK-default `POST` unless semantics require another method.
+- Application-owned JSON uses alias-free `snake_case` fields.
+- Put every business input in one named, typed JSON `*Request` body. Do not use path, query, header,
+  or cookie parameters, `Body(embed=True)`, free-form bodies, or inline anonymous object schemas.
+- Every success response is `ApplicationResponse[*Response]`; every handled error is
+  `ApplicationResponse[None]`. Explicitly publish that error model for request validation `422`
+  and expected 4xx/5xx responses, and keep one compatible success schema across all numeric 2xx
+  responses.
+- Use `RequestModel` for public requests, `ResponseModel` for public responses, and `ORMResponse`
+  only for responses populated from ORM attributes.
+- Public typed object models reject unknown fields; request numbers are finite.
+- Generate OpenAPI with FastAPI's `get_openapi()`, preserve FastAPI-generated metadata, add only
+  `x-pokerlost-service.id`, and cache the resulting schema.
+- Keep FastAPI's built-in `/openapi.json`, `/docs`, and `/redoc` endpoints disabled; publish the
+  wrapped schema through the configured OpenAPI operation path.
+- The template does not construct OAuth2 or scope metadata manually. Authorization is
+  service-specific: declare it with FastAPI security dependencies in the concrete service and do
+  not manually mutate generated OpenAPI security metadata.
+
+## PokerLost SDK compatibility
+
+- The current `pypokerlost` public contracts and method generator are authoritative. Read
+  `docs/api/operation-contract.md`, `docs/api/application-response.md`, and
+  `docs/api/openapi-and-sdk.md` before changing the operation,
+  request/response, or OpenAPI contracts.
+- `pypokerlost` is a mandatory dependency from the pinned private Git source in `pyproject.toml`.
+  Do not replace it with a sibling path, editable checkout, `file://` source, floating branch, or
+  credential-bearing URL.
+- Keep the local `ApplicationResponse` and `ResponseModel` exactly aligned with SDK fields,
+  defaults, invariants, and strict configuration. Do not extend or wrap the envelope.
+- Type each business `OPERATION` as `Final[APIOperation]` from `pypokerlost.types`.
+- PokerLost services do not implement direct HTTP clients for other PokerLost services.
+  Inter-service calls use `pypokerlost.Client` and generated `PokerlostMethod`/response types.
+- Do not add handwritten `httpx`, `requests`, or `aiohttp` transports to another PokerLost service,
+  manual operation URL builders or envelope decoders, local copies of remote DTOs, or compatibility
+  wrappers around direct HTTP.
+- If a required generated SDK method is missing, define or fix the target service OpenAPI contract,
+  regenerate the SDK methods, and use that generated API; never bypass the SDK.
+- Create only clients for actual configured targets. Own each target-specific client in FastAPI
+  lifespan, store it in `ApplicationResources`, reuse it across requests, and close it on shutdown.
+- Import only focused public SDK facades or the generated methods package; do not import private
+  modules, `pypokerlost` scripts, or generator-internal models.
+- After an API contract change, run the authoritative SDK generator compatibility check. It catches
+  invalid field names, reserved-name and generated-name collisions, and unsupported schemas.
+
+## Configuration policy
+
+- `ACCOUNTSSERVICE_ROOT_OPERATION` and
+  `ACCOUNTSSERVICE_OPENAPI_OPERATION` are required startup settings typed as
+  `pypokerlost.types.APIOperation`. Register their routes from the resolved `Settings` instance;
+  never read settings at module import time or duplicate the operation regex.
+- Base operation IDs are deployment settings. Business operation IDs remain stable source-defined
+  contracts and do not move into environment configuration.
+- Put deployment and security policy in typed settings: secrets, active key versions, cost factors,
+  TTLs, timeouts, pool sizing, rate limits, retention periods, password limits, and deployment-
+  tunable resource limits.
+- Keep protocol invariants in code: algorithm identifiers, serialization domain separators,
+  wire-format versions, field grammar, database identifiers, role values, and business operation
+  IDs.
+
+## Business-operation fingerprinting
+
+- Reuse `application/idempotency/business_operation_fingerprinting.py`; do not fork its encoding or
+  comparison behavior in a feature package.
+- A concrete idempotent operation supplies a small explicit field mapping, including an operation
+  discriminator when different operation types share one persistence key namespace. Never use
+  JSON, `repr()`, randomized password hashes, or manually concatenated values as canonical input.
+- Active services require the optional settings secret with `require_secret()`, construct one
+  process-owned `BusinessOperationFingerprinter` at application composition or lifespan, and
+  inject it into handlers. Never instantiate it per request, in a repository, or at import time.
+- Persist only the 32-byte digest and positive key version. Never persist or log canonical
+  plaintext, input fields, secrets, or digests, and never expose them through the API.
+- Do not rotate the active key until all retained idempotency records created with the old key have
+  expired or been deleted. A candidate with a different key version is a conflict.
+
+## Dependencies
+
+Consume public FastAPI dependencies through PEP 695 aliases:
+
+```python
+type DatabaseSession = Annotated[
+    AsyncSession,
+    Depends(_open_database_session, scope="function"),
+]
+```
+
+Resolver functions are private implementation details. Route signatures use aliases instead of
+repeating inline `Annotated[..., Depends(...)]` declarations. Request middleware, rather than a
+FastAPI `Header` dependency, owns request and correlation context.
+
+The request database dependency owns one SQLAlchemy transaction through its async context manager.
+Do not call context-manager protocol methods directly or translate persistence exceptions inside
+the dependency. Central API handlers map `OperationalError` to availability failure and sanitize
+other `SQLAlchemyError` instances.
+
+## Domain
+
+- Framework-independent value primitives and closed domain or platform categories live in
+  `domain`.
+- `Environment` belongs to `domain.enums`; configuration imports domain categories rather than
+  owning them.
+- `ValueModel` is the strict immutable base for structured internal application and domain values.
+- Public API request and response schemas do not inherit `ValueModel`.
+- SQLAlchemy persistence models do not inherit `ValueModel`.
+- Keep `domain/__init__.py` focused; import `Environment` from `domain.enums` and `ValueModel` from
+  `domain.value_model`.
+
+## Application
+
+- Reuse immutable `Command`, `Query`, and `Result` value bases and the abstract asynchronous
+  `Handler` execution contract.
+- Application contracts are internal typed values, not transport schemas.
+- Handlers orchestrate use cases without depending on FastAPI or owning transaction commit and
+  rollback.
+- Do not add a command bus, mediator, registry, or dependency-injection framework without a
+  concrete requirement.
+
+## Artifact naming
+
+For every concrete artifact, express its category in both the class suffix and the matching
+`snake_case` Python module suffix. The directory identifies the layer or feature; the matching
+suffix identifies the artifact kind.
+
+| Artifact | Concrete class | File |
+| --- | --- | --- |
+| API request | `<SemanticName>Request` | `<semantic_name>_request.py` |
+| API response | `<SemanticName>Response` | `<semantic_name>_response.py` |
+| ORM-backed API response | `<SemanticName>Response` | `<semantic_name>_response.py` |
+| SQLAlchemy ORM entity | `<EntityName>Model` | `<entity_name>_model.py` |
+| Persistence read projection | `<SemanticName>Projection` | `<semantic_name>_projection.py` |
+
+Examples:
+
+```text
+CreateAccountRequest
+create_account_request.py
+
+AccountResponse
+account_response.py
+
+AccountDetailsResponse
+account_details_response.py
+
+AccountModel
+account_model.py
+
+AccountSummaryProjection
+account_summary_projection.py
+```
+
+The exceptions are narrow:
+
+- Shared and abstract bases retain their established names: `RequestModel`, `ResponseModel`,
+  `ORMResponse`, `Base`, `UUIDModel`, `Projection`, `Command`, `Query`, `Result`, and `Handler`.
+- An operation-oriented package carries its semantic name. For example,
+  `application/accounts/create_account/` may contain `command.py`, `handler.py`, and `result.py`
+  defining `CreateAccountCommand`, `CreateAccountHandler`, and `CreateAccountResult`. Files inside
+  operation packages may remain `command.py`, `query.py`, `handler.py`, and `result.py`; do not add
+  a redundant semantic module prefix such as `create_account_command.py` there.
+- Domain enums live under `domain/enums/` and do not need a redundant `Enum` class suffix, for
+  example `Environment` in `environment.py`.
+
+## Persistence
+
+- Use SQLAlchemy 2 typed declarative mappings and explicit statements, including `RETURNING` when
+  appropriate.
+- A request owns its session and transaction; routes, handlers, repositories, and query adapters do
+  not call `begin()`, `commit()`, or `rollback()`.
+- Keep repositories focused and keep read projections separate from ORM entities and API
+  responses.
+- Keep driver-level connection availability normalization at the database engine boundary. Target
+  only an observed concrete exception; never classify every `OSError` as a PostgreSQL failure.
+- Import every concrete ORM entity through `persistence.database.models` so Alembic sees common
+  metadata. Do not add a fake model or migration to an otherwise pristine service.
+
+## Observability
+
+- Configure Logfire once through `configure_observability()` and keep FastAPI and SQLAlchemy
+  instrumentation in focused modules.
+- Never capture or log passwords, authorization headers, access or refresh tokens, client secrets,
+  private keys, database credentials, or other secrets.
+
+## Imports and tooling
+
+- Prefer explicit imports and use a package facade only when it intentionally defines a focused
+  public interface. Do not turn `__init__.py` into an export dump.
+- Use the repository's `Makefile`, `uv`, Ruff, mypy, Alembic, Docker, and Helm conventions.
+- Do not modify CI/CD or add tests unless the task explicitly requests them.

@@ -1,0 +1,54 @@
+# accountsService
+
+`accountsService` owns the account and credential domain described in `SERVICE.md`.
+The current foundation includes PostgreSQL models for resumable account workflows, typed password
+and fingerprint policy, SDK-compatible API/OpenAPI publication, observability, Docker, and Helm.
+Concrete HTTP business operations are added only when their full application flow is implemented.
+
+Read `docs/index.md` for the complete guide and `AGENTS.md` for normative engineering rules.
+Python 3.14 or newer is required.
+
+## Install
+
+The mandatory private `pypokerlost` dependency requires GitHub SSH read access. Create local
+configuration, verify the SSH identity, and install the locked environment:
+
+```bash
+cp .env.example .env
+ssh-add -l
+ssh -T git@github.com
+uv lock
+uv sync --locked
+```
+
+Replace the local placeholders in `.env`; do not store secrets or private keys in the repository.
+See `docs/getting-started/installation.md` and `docs/getting-started/configuration.md` for details.
+
+## Run
+
+```bash
+make run
+```
+
+## Base endpoints
+
+| method | path | operation_id | response_model |
+| --- | --- | --- | --- |
+| `GET` | `/` | `accounts.getRoot` | `RootResponse` |
+| `GET` | `/openapi.get` | `openapi.get` | `OpenAPIResponse` |
+
+The identifiers shown are the generated `.env.example` values. Both are required settings and may
+be changed without changing the root HTTP path. Both responses use `ApplicationResponse`; see
+`docs/getting-started/quickstart.md` and `docs/api/public-surface.md`.
+
+## Development and deployment
+
+Run `make help` for the thin local tool interface. The regular quality entry points are:
+
+```bash
+make check
+make pre-commit
+```
+
+See `docs/development/commands.md` and `docs/development/containers-and-kubernetes.md` for Docker
+and Helm workflows.

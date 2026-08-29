@@ -1,0 +1,85 @@
+serviceIdentity: "accountsService"
+rootOperation: accounts.getRoot
+openapiOperation: openapi.get
+
+replicaCount: 2
+
+image:
+  repository: pokerlost/accountsservice
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+http:
+  port: 8000
+
+environment:
+  ACCOUNTSSERVICE_APPLICATION__ENVIRONMENT: production
+  ACCOUNTSSERVICE_APPLICATION__VERSION: "0.1.0"
+  ACCOUNTSSERVICE_HTTP__HOST: 0.0.0.0
+  ACCOUNTSSERVICE_HTTP__PORT: "8000"
+  ACCOUNTSSERVICE_LOGFIRE__ENABLED: "true"
+  ACCOUNTSSERVICE_LOGFIRE__SEND_TO_LOGFIRE: "true"
+  ACCOUNTSSERVICE_LOGFIRE__CONSOLE: "true"
+  ACCOUNTSSERVICE_LOGFIRE__MINIMUM_LEVEL: info
+  ACCOUNTSSERVICE_DATABASE__POOL_SIZE: "10"
+  ACCOUNTSSERVICE_DATABASE__MAX_OVERFLOW: "10"
+  ACCOUNTSSERVICE_DATABASE__POOL_TIMEOUT_SECONDS: "10"
+  ACCOUNTSSERVICE_DATABASE__COMMAND_TIMEOUT_SECONDS: "30"
+  ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__KEY_VERSION: "1"
+  ACCOUNTSSERVICE_PASSWORD__ARGON2_MEMORY_COST: "65536"
+  ACCOUNTSSERVICE_PASSWORD__ARGON2_TIME_COST: "3"
+  ACCOUNTSSERVICE_PASSWORD__ARGON2_PARALLELISM: "4"
+  ACCOUNTSSERVICE_PASSWORD__ARGON2_HASH_LENGTH: "32"
+  ACCOUNTSSERVICE_PASSWORD__ARGON2_SALT_LENGTH: "16"
+  ACCOUNTSSERVICE_PASSWORD__MIN_LENGTH: "12"
+  ACCOUNTSSERVICE_PASSWORD__MAX_LENGTH: "256"
+
+secretEnvironment:
+  ACCOUNTSSERVICE_LOGFIRE__TOKEN:
+    enabled: true
+    name: accountsservice-logfire
+    key: token
+  ACCOUNTSSERVICE_DATABASE__URL:
+    enabled: true
+    name: accountsservice-runtime
+    key: database-url
+  ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__SECRET:
+    enabled: true
+    name: accountsservice-runtime
+    key: business-operation-fingerprint-secret
+
+gunicorn:
+  workers: 2
+  timeout: 30
+  gracefulTimeout: 30
+  keepalive: 5
+  forwardedAllowIps: "127.0.0.1"
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+terminationGracePeriodSeconds: 40
