@@ -44,6 +44,28 @@ events, tournaments, bets, balances or blockchain business logic.
 - PostgreSQL transactions must never span SDK network calls.
 - Passwords, password hashes, tokens and login grants must not enter logs.
 
+### Outbound authService integration
+
+The current HTTP surface has no implemented operation that calls authService, and accountsService
+does not import or call a generated authService business method. It therefore has no authService
+client, target settings, client credentials, requested scope bundle, or Kubernetes secret wiring.
+
+When a concrete operation introduces that dependency:
+
+- create one target-specific `pypokerlost.Client` in FastAPI lifespan, store it in an explicitly
+  typed `ApplicationResources` field, reuse it across requests, and close it on shutdown;
+- use `ClientCredentialsTokenProvider` and `BearerTokenMiddleware` for service authentication, with
+  `RetryMiddleware` outside the bearer middleware;
+- use the exact target resource `urn:pokerlost:service:authService` and request only scopes required
+  by the generated operations that are actually called;
+- keep retry disabled unless a call passes an explicit `RequestOptions(retry=RetryPolicy(...))`;
+- retry a mutation only with the same `business_operation_id` and the same semantic payload, backed
+  by the target operation's persisted idempotency contract;
+- never replay `401` or `403` automatically, and never hold a request-owned PostgreSQL transaction
+  across token acquisition, the remote call, or retry backoff;
+- keep client credentials, authorization headers, access tokens, and sensitive payloads out of
+  source, ConfigMaps, OpenAPI, errors, representations, telemetry, and logs.
+
 ### Nickname policy
 
 - Nicknames are Unicode, mutable and non-unique.

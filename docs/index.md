@@ -1,6 +1,7 @@
 # accountsService documentation
 
-This documentation describes the generated PokerLost FastAPI service foundation and its verified development workflows.
+This documentation describes the accountsService foundation, its verified development workflows,
+and the current boundary for adopting generated PokerLost inter-service clients.
 
 ## Getting started
 
@@ -14,14 +15,14 @@ This documentation describes the generated PokerLost FastAPI service foundation 
 - `docs/api/operation-contract.md` — operation contract.
 - `docs/api/application-response.md` — application response.
 - `docs/api/errors.md` — errors.
-- `docs/api/openapi-and-sdk.md` — OpenAPI and SDK.
+- `docs/api/openapi-and-sdk.md` — OpenAPI publication and generated inter-service SDK consumption.
 - `docs/api/public-surface.md` — public surface.
 
 ## Architecture
 
 - `docs/architecture/overview.md` — architecture overview.
-- `docs/architecture/request-lifecycle.md` — request lifecycle.
-- `docs/architecture/persistence-and-transactions.md` — persistence and transactions.
+- `docs/architecture/request-lifecycle.md` — process resources, requests, and outbound call phases.
+- `docs/architecture/persistence-and-transactions.md` — persistence, retries, and transaction boundaries.
 - `docs/architecture/business-operation-fingerprinting.md` — idempotency fingerprinting.
 
 ## Development

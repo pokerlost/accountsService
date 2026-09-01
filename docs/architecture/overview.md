@@ -45,6 +45,19 @@ Public request and response models remain API artifacts; ORM models and projecti
 persistence artifacts. A route performs the explicit translation between those boundaries rather
 than sharing one model across layers.
 
+## Outbound integration boundary
+
+No current route or application handler calls authService, so the composition root has no outbound
+client, provider, credentials, scopes, or retry policy. Existing persisted provisioning and
+synchronization state is a local workflow foundation, not proof that a remote call is implemented.
+
+When an actual generated authService method is adopted, `api` composition owns one target-specific
+lifespan client and publishes it through an explicitly named typed `ApplicationResources` field.
+Application orchestration may consume that focused dependency but domain objects remain independent
+of SDK classes. Outbound SDK middleware is distinct from inbound FastAPI request middleware:
+`RetryMiddleware` is outermost, `BearerTokenMiddleware` resolves service credentials inside it, and
+retry remains disabled without an explicit per-call policy.
+
 ## Runtime foundation
 
 `docs/architecture/request-lifecycle.md` explains composition and per-request flow.

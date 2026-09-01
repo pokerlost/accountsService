@@ -94,6 +94,20 @@ The minimum must not exceed the maximum. Password length counts the exact Python
 accountsService does not trim or normalize it. One lifespan-owned `Argon2PasswordService` uses all
 seven values for validation, hashing, dummy verification, and rehash-policy checks.
 
+## Outbound service targets
+
+The current settings model has no authService target group because no implemented operation calls
+authService. Consequently there are no `ACCOUNTSSERVICE_AUTH_SERVICE__*` environment variables,
+client credentials, requested scopes, or retry settings. Do not preconfigure an unused target.
+
+When the first real generated method is adopted, add one strict target-specific settings group for
+its validated base URL, public client ID, secret client credential, token refresh skew, request
+timeout, and bounded retry values. Keep the fixed resource
+`urn:pokerlost:service:authService` and the least-privilege scope bundle in code as service contract
+invariants rather than arbitrary deployment values. The client secret is a typed secret input and
+must come from a Kubernetes Secret; it never enters `.env.example`, a ConfigMap, validation output,
+representations, telemetry, or logs.
+
 Keep the fingerprint secret, Logfire token, and database URL outside source control. Kubernetes
 supplies them through Secret references rather than the chart ConfigMap; see
 `docs/development/containers-and-kubernetes.md`.

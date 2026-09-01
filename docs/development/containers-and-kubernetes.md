@@ -42,4 +42,10 @@ and the optional Logfire token use `secretEnvironment` references to existing Ku
 names and keys. Never place secret values in `environment`, a ConfigMap, a committed values file,
 or rendered documentation.
 
+The current chart has no authService target values or client-secret reference because the service
+has no implemented authService call. When such a call is added, its non-secret typed settings use
+the existing ConfigMap convention and only `ACCOUNTSSERVICE_AUTH_SERVICE__CLIENT_SECRET` uses
+`secretEnvironment`. Authorization values and access tokens are runtime-only and must never appear
+in chart values, rendered manifests, telemetry, or logs.
+
 The chart also disables service-account token mounting, requests a non-root runtime, uses a read-only root filesystem, drops Linux capabilities, and mounts a bounded writable temporary volume. Review rendered output and environment-specific Secret references before deployment; successful linting and rendering do not prove cluster readiness or application correctness.

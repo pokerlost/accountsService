@@ -32,10 +32,22 @@ defined in `SERVICE.md`.
 
 ## Remote calls
 
-Do not hold a PostgreSQL transaction open across a remote `pypokerlost` SDK call. A remote method
-call and a local database transaction cannot form one atomic transaction. Structure the application
-workflow so remote I/O and a short local persistence phase have explicit ordering and failure
-semantics, without treating either side as a distributed commit participant.
+There is no current authService call site, so no present request transaction crosses remote I/O.
+When an operation adopts a generated authService method, do not hold a PostgreSQL transaction open
+across bearer token acquisition, the `pypokerlost` SDK call, or retry backoff. A remote method call
+and a local database transaction cannot form one atomic transaction.
+
+Structure a mutation as explicit phases: use a short transaction to establish or load the persisted
+business operation and semantic fingerprint, close that transaction, perform the remote call, then
+use another short transaction to record the outcome or reconciliation state. Every allowed retry
+reuses the same `business_operation_id` and the same semantic payload. Retry is transport recovery,
+not a replacement for persisted idempotency or reconciliation after an ambiguous outcome.
+
+Only a verified read-only or contractually idempotent operation receives an explicit per-call
+`RetryPolicy`; no policy means one attempt. `401`, `403`, idempotency conflicts, validation failures,
+and ordinary application failures are not automatically replayed. If a future handler cannot expose
+a non-transactional remote-call seam with the existing workflow architecture, that call remains
+blocked until the service has an approved safe orchestration boundary.
 
 ## Failure mapping
 
