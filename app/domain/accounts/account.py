@@ -7,12 +7,15 @@ from datetime import datetime
 from typing import Final, Self
 from uuid import UUID
 
-from domain.enums import AccountStatus, HumanRole
+from pypokerlost.contracts.authorization import AuthorizationRole
+
+from domain.enums import AccountStatus
 from domain.errors import (
     DomainConflictError,
     DomainValidationError,
     InvalidStateTransitionError,
 )
+from domain.human_role_policy import validate_human_authorization_role
 
 from .canonical_username import CanonicalUsername
 from .nickname import Nickname
@@ -39,7 +42,7 @@ class Account:
     _username: CanonicalUsername
     _nickname: Nickname
     _status: AccountStatus
-    _role_snapshot: HumanRole | None
+    _role_snapshot: AuthorizationRole | None
     _created_at: datetime
     _updated_at: datetime
 
@@ -55,7 +58,7 @@ class Account:
         username: CanonicalUsername,
         nickname: Nickname,
         created_at: datetime,
-        role_snapshot: HumanRole | None = None,
+        role_snapshot: AuthorizationRole | None = None,
     ) -> Self:
         """Create a new local account in the mandatory pending state."""
         return cls._build(
@@ -78,7 +81,7 @@ class Account:
         username: CanonicalUsername,
         nickname: Nickname,
         status: AccountStatus,
-        role_snapshot: HumanRole | None,
+        role_snapshot: AuthorizationRole | None,
         created_at: datetime,
         updated_at: datetime,
     ) -> Self:
@@ -103,7 +106,7 @@ class Account:
         username: CanonicalUsername,
         nickname: Nickname,
         status: AccountStatus,
-        role_snapshot: HumanRole | None,
+        role_snapshot: AuthorizationRole | None,
         created_at: datetime,
         updated_at: datetime,
     ) -> Self:
@@ -117,8 +120,11 @@ class Account:
             raise DomainValidationError("Account nickname must be validated.")
         if not isinstance(status, AccountStatus):
             raise DomainValidationError("Account status is invalid.")
-        if role_snapshot is not None and not isinstance(role_snapshot, HumanRole):
-            raise DomainValidationError("Human role snapshot is invalid.")
+        if role_snapshot is not None:
+            validate_human_authorization_role(
+                role_snapshot,
+                field_name="Human role snapshot",
+            )
         if status is not AccountStatus.PENDING and auth_principal_id is None:
             raise DomainValidationError(
                 "A non-pending account requires an authentication principal."
@@ -163,7 +169,7 @@ class Account:
         return self._status
 
     @property
-    def role_snapshot(self) -> HumanRole | None:
+    def role_snapshot(self) -> AuthorizationRole | None:
         """Return the reconciliation-only human role snapshot."""
         return self._role_snapshot
 
@@ -215,12 +221,15 @@ class Account:
 
     def update_role_snapshot(
         self,
-        role_snapshot: HumanRole | None,
+        role_snapshot: AuthorizationRole | None,
         updated_at: datetime,
     ) -> None:
         """Replace or clear the informational role snapshot."""
-        if role_snapshot is not None and not isinstance(role_snapshot, HumanRole):
-            raise DomainValidationError("Human role snapshot is invalid.")
+        if role_snapshot is not None:
+            validate_human_authorization_role(
+                role_snapshot,
+                field_name="Human role snapshot",
+            )
         _validate_timestamp(updated_at, name="Account update time")
         self._role_snapshot = role_snapshot
         self._updated_at = updated_at

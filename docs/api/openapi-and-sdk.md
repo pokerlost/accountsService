@@ -51,49 +51,13 @@ response types. A concrete service creates a client only for a target declared b
 shutdown. It does not create a parallel HTTP client, URL builder, response decoder, or local copy
 of a remote service DTO.
 
-accountsService currently imports and calls no generated authService business method. Its runtime
-therefore has no authService client, target settings, client credentials, requested OAuth2 scopes,
-or deployment secret. The authService responsibilities in `SERVICE.md` do not by themselves justify
-an unused client.
-
-When an implemented operation creates a real authService dependency, composition uses these public
-facades:
-
-```python
-from pypokerlost import Client
-from pypokerlost.client.api_server import APIServer
-from pypokerlost.client.auth import ClientCredentials, ClientCredentialsTokenProvider
-from pypokerlost.client.request import RequestOptions
-from pypokerlost.client.retry import RetryPolicy
-from pypokerlost.client.session import HttpxSession
-from pypokerlost.middleware import BearerTokenMiddleware, RetryMiddleware
-```
-
-The lifespan creates one provider and one target-specific `Client`, using an `HttpxSession` for the
-validated target `APIServer`. The client middleware tuple is ordered as
-`(RetryMiddleware(), BearerTokenMiddleware(provider))`: the first component is outermost, so each
-explicit retry attempt re-enters bearer resolution while the provider normally serves a valid token
-from its process-local cache. The client is started before its typed `ApplicationResources` field is
-published and closed before resources on which it depends.
-
-`ClientCredentialsTokenProvider` sends the focused form-and-HTTP-Basic `/oauth.token` request inside
-the SDK and decodes both success and failure through the universal `ApplicationResponse` contract.
-The consuming service does not construct that request, cache raw tokens, inject `Authorization`
-itself, or add a direct `httpx`, `requests`, or `aiohttp` fallback. Neither the provider nor bearer
-middleware performs automatic `401` or `403` replay.
-
-The target resource is fixed in code as `urn:pokerlost:service:authService`. The immutable scope
-bundle contains only exact scopes required by generated operations that accountsService actually
-calls. Because the current call set is empty, the current scope bundle is also empty and no provider
-is constructed; wildcard and future scopes are not requested.
-
-Installing `RetryMiddleware` does not enable retry. A verified read-only or contractually
-idempotent call opts in with `RequestOptions(retry=RetryPolicy(...))`; an ordinary call omits that
-option and makes one attempt. A mutation replay must keep the same `business_operation_id` and the
-same semantic payload. accountsService persists that business identity, fingerprint, workflow, and
-reconciliation state; the SDK does not. A PostgreSQL transaction must not span token acquisition,
-the target call, or backoff sleep. See `docs/architecture/persistence-and-transactions.md` for that
-boundary.
+The SDK owns transport, generated methods, shared authorization models, generic request headers,
+canonical exceptions, and `PokerLostRetryPolicy`; it does not own token acquisition, credentials,
+storage, refresh, or bearer injection. A consuming service calls the generated `oauth.token`
+method through a service-owned adapter when its application use case requires a token. Retry
+remains disabled until a verified replay-safe call passes
+`RequestOptions(retry=PokerLostRetryPolicy())`. The exact extension pattern is documented in
+`docs/architecture/inter-service-clients.md`.
 
 The current pristine endpoints and their publication models are listed in
 `docs/api/public-surface.md`.

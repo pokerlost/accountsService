@@ -26,9 +26,9 @@ Repositories and query adapters receive the request session and execute explicit
 statements. They do not create engines or sessions and do not complete the transaction. ORM
 entities, persistence projections, and public API response models remain separate artifacts.
 
-The pristine template supplies metadata, repository, result-reader, and projection foundations but
-no concrete table or business repository. Concrete adapters are added only for responsibilities
-defined in `SERVICE.md`.
+accountsService adds account, password-credential, and resumable-workflow tables and focused
+repositories for responsibilities defined in `SERVICE.md`. Public response models remain separate
+from those persistence entities and projections.
 
 ## Remote calls
 
@@ -43,11 +43,22 @@ use another short transaction to record the outcome or reconciliation state. Eve
 reuses the same `business_operation_id` and the same semantic payload. Retry is transport recovery,
 not a replacement for persisted idempotency or reconciliation after an ambiguous outcome.
 
-Only a verified read-only or contractually idempotent operation receives an explicit per-call
-`RetryPolicy`; no policy means one attempt. `401`, `403`, idempotency conflicts, validation failures,
-and ordinary application failures are not automatically replayed. If a future handler cannot expose
-a non-transactional remote-call seam with the existing workflow architecture, that call remains
-blocked until the service has an approved safe orchestration boundary.
+Only a verified read-only or contractually idempotent operation receives the explicit per-call
+`PokerLostRetryPolicy`; no policy means one attempt. `401`, `403`, idempotency conflicts, validation
+failures, and ordinary application failures are not automatically replayed. If a future handler
+cannot expose a non-transactional remote-call seam with the existing workflow architecture, that
+call remains blocked until the service has an approved safe orchestration boundary.
+
+The prohibited span includes service-owned token acquisition, the first target attempt,
+`Retry-After` or jitter backoff sleep, and every later attempt. End the request-owned transaction
+before entering that outbound phase. Reuse the service's existing workflow or reconciliation seam
+for an ambiguous remote outcome; do not introduce an unowned transaction, hold a session idle, or
+treat transport retry as durable business reconciliation.
+
+Mutation retry is allowed only when the target contract persists idempotency and every attempt
+uses the same `business_operation_id` and the same semantic payload. The SDK neither creates that
+key nor persists fingerprint, workflow, outbox, or reconciliation state. Detailed client and retry
+composition is documented in `docs/architecture/inter-service-clients.md`.
 
 ## Failure mapping
 

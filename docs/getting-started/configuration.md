@@ -75,8 +75,9 @@ The database URL must include a username, password, host, and database. It is tr
 
 The secret is mandatory because accountsService owns active idempotent workflows. Only digest and
 key version are persisted. Do not rotate the active key until every retained record made with the
-old key has expired or been deleted; this first-version policy intentionally has no overlapping
-keyring.
+old key has expired or been deleted; the current key-rotation policy intentionally has no
+overlapping keyring. Records produced by the superseded pre-production canonical format must be
+cleared before v2 is enabled; there is no dual-format comparison path.
 
 ## `password`
 
@@ -94,20 +95,22 @@ The minimum must not exceed the maximum. Password length counts the exact Python
 accountsService does not trim or normalize it. One lifespan-owned `Argon2PasswordService` uses all
 seven values for validation, hashing, dummy verification, and rehash-policy checks.
 
+Keep the fingerprint secret, Logfire token, and database URL outside source control. Kubernetes
+supplies them through Secret references rather than the chart ConfigMap; see
+`docs/development/containers-and-kubernetes.md`.
+
 ## Outbound service targets
 
 The current settings model has no authService target group because no implemented operation calls
 authService. Consequently there are no `ACCOUNTSSERVICE_AUTH_SERVICE__*` environment variables,
-client credentials, requested scopes, or retry settings. Do not preconfigure an unused target.
+client credentials, requested scopes, token storage, or retry settings. Do not preconfigure an
+unused target.
 
-When the first real generated method is adopted, add one strict target-specific settings group for
-its validated base URL, public client ID, secret client credential, token refresh skew, request
-timeout, and bounded retry values. Keep the fixed resource
-`urn:pokerlost:service:authService` and the least-privilege scope bundle in code as service contract
-invariants rather than arbitrary deployment values. The client secret is a typed secret input and
-must come from a Kubernetes Secret; it never enters `.env.example`, a ConfigMap, validation output,
-representations, telemetry, or logs.
+When a concrete operation introduces that dependency, add one focused immutable authService
+settings group and one explicitly named field on root `Settings`. Its base URL and request timeout
+are deployment configuration. Token credentials, storage, refresh, requested exact scopes, and
+audience remain service-owned and are added only when the implemented use case needs them.
 
-Keep the fingerprint secret, Logfire token, and database URL outside source control. Kubernetes
-supplies them through Secret references rather than the chart ConfigMap; see
-`docs/development/containers-and-kubernetes.md`.
+Do not expose `PokerLostRetryPolicy` values as settings; its transport algorithm is fixed by the
+SDK. Do not automatically add authService configuration to every service. The complete ownership
+pattern is in `docs/architecture/inter-service-clients.md`.

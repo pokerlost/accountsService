@@ -48,4 +48,13 @@ the existing ConfigMap convention and only `ACCOUNTSSERVICE_AUTH_SERVICE__CLIENT
 `secretEnvironment`. Authorization values and access tokens are runtime-only and must never appear
 in chart values, rendered manifests, telemetry, or logs.
 
+The pristine chart contains no outbound target, credential, token storage, or retry values. A
+concrete service with a real target may add its base URL and request timeout through the existing
+non-secret `environment` or explicit ConfigMap convention. Credential and token-store inputs remain
+service-owned and are wired only when an implemented use case needs them; secrets use
+`secretEnvironment` and existing Kubernetes Secret references. `PokerLostRetryPolicy` values never
+become deployment settings. Authorization headers and tokens never become chart values, ConfigMap
+data, logs, or rendered manifests. See `docs/architecture/inter-service-clients.md` for the
+ownership and lifecycle pattern.
+
 The chart also disables service-account token mounting, requests a non-root runtime, uses a read-only root filesystem, drops Linux capabilities, and mounts a bounded writable temporary volume. Review rendered output and environment-specific Secret references before deployment; successful linting and rendering do not prove cluster readiness or application correctness.

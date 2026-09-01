@@ -47,10 +47,18 @@ The error code is stable machine-readable metadata; the message is safe for a ca
 The public model is strict, immutable, and closed to extra fields. The wire envelope has exactly
 these four properties; do not extend it with transport or observability metadata.
 
-The envelope is a PokerLost platform contract, not an exception for ordinary JSON operations.
-authService's form-and-HTTP-Basic `POST /oauth.token` endpoint also returns these exact top-level
-fields. On success its access token exists only at `result.access_token`; handled token failures use
-the same failed `ApplicationResponse[None]` shape rather than a raw OAuth2 error object.
+## OAuth token operation
+
+The envelope is universal, including for `POST /oauth.token`. A successful client-credentials
+response carries `access_token`, literal `bearer` `token_type`, positive `expires_in`, and the
+canonical space-delimited granted `scope` inside `result`. A handled token failure uses
+`ApplicationResponse[None]` with the same top-level four fields.
+
+There is no raw OAuth2 token response, token-specific error envelope, `error_description`, or
+FastAPI `detail` body for handled token errors. The generated `oauth.token` method decodes the
+result into the shared `pypokerlost.contracts.authorization.OAuthTokenResponse`. A consuming
+service decides when to call that method and owns any credential, token storage, or refresh
+orchestration behind its application port and adapter.
 
 ## SDK behavior
 
@@ -59,9 +67,6 @@ The `pypokerlost` client interprets the envelope and HTTP status together:
 - a valid failed envelope raises `PokerlostAPIError`, including for a non-2xx response;
 - a successful envelope returned with a non-2xx status raises `PokerlostProtocolError`;
 - invalid JSON, an invalid envelope, or an invalid typed result raises `ClientDecodeError`.
-
-`ClientCredentialsTokenProvider` uses this same decoder for `/oauth.token`; consuming services do
-not implement a token-specific envelope parser.
 
 Servers therefore return a success envelope with a 2xx status and a failure envelope with the
 corresponding non-2xx status. The concrete mappings and safe messages are documented in

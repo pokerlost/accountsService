@@ -54,11 +54,14 @@ When a concrete operation introduces that dependency:
 
 - create one target-specific `pypokerlost.Client` in FastAPI lifespan, store it in an explicitly
   typed `ApplicationResources` field, reuse it across requests, and close it on shutdown;
-- use `ClientCredentialsTokenProvider` and `BearerTokenMiddleware` for service authentication, with
-  `RetryMiddleware` outside the bearer middleware;
+- define a service-owned application port for token acquisition and implement it with a
+  service-owned pypokerlost adapter that calls the generated `oauth.token` method;
+- keep client credentials, requested scopes, target resource, and any token storage or refresh
+  orchestration in accountsService composition rather than the SDK;
 - use the exact target resource `urn:pokerlost:service:authService` and request only scopes required
-  by the generated operations that are actually called;
-- keep retry disabled unless a call passes an explicit `RequestOptions(retry=RetryPolicy(...))`;
+  by generated operations that are actually called;
+- keep retry disabled unless a semantically safe call passes
+  `RequestOptions(retry=PokerLostRetryPolicy())`;
 - retry a mutation only with the same `business_operation_id` and the same semantic payload, backed
   by the target operation's persisted idempotency contract;
 - never replay `401` or `403` automatically, and never hold a request-owned PostgreSQL transaction
@@ -107,3 +110,6 @@ successful verification when the active policy differs.
 - Do not rotate the active key until every retained idempotency record produced with the old key
   has expired or been deleted. Without a retained versioned keyring, a different key version is a
   conflict rather than a replay match.
+- This pre-production service does not retain compatibility with records created by the superseded
+  v1 canonical format. Clear or reset those local idempotency records before deploying v2; there is
+  no runtime dual-format path or schema migration that makes v1 records comparable with v2.

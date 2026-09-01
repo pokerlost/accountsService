@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from pypokerlost.contracts.authorization import AuthorizationRole
 from sqlalchemy import insert, select, update
 
 from domain.accounts import Account, CanonicalUsername, Nickname
-from domain.enums import AccountStatus, HumanRole
+from domain.enums import AccountStatus
 from persistence.database.models import AccountModel
 
 from .base import SQLAlchemyRepository
@@ -26,7 +27,9 @@ def _to_domain(model: AccountModel) -> Account:
         username=CanonicalUsername(model.username),
         nickname=Nickname(model.nickname),
         status=AccountStatus(model.status),
-        role_snapshot=HumanRole(model.role_snapshot) if model.role_snapshot is not None else None,
+        role_snapshot=(
+            AuthorizationRole(model.role_snapshot) if model.role_snapshot is not None else None
+        ),
         created_at=model.created_at,
         updated_at=model.updated_at,
     )

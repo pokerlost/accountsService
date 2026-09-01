@@ -7,8 +7,11 @@ from datetime import datetime
 from typing import Self
 from uuid import UUID
 
-from domain.enums import HumanRole, RemotePrincipalStatus, SynchronizationMutationType
+from pypokerlost.contracts.authorization import AuthorizationRole, PrincipalStatus
+
+from domain.enums import SynchronizationMutationType
 from domain.errors import DomainValidationError
+from domain.human_role_policy import validate_human_authorization_role
 
 
 def _validate_timestamp(value: datetime, *, name: str) -> None:
@@ -24,8 +27,8 @@ class AccountSynchronizationOperation:
     _business_operation_id: UUID
     _account_id: UUID
     _mutation_type: SynchronizationMutationType
-    _desired_status: RemotePrincipalStatus | None
-    _desired_role: HumanRole | None
+    _desired_status: PrincipalStatus | None
+    _desired_role: AuthorizationRole | None
     _created_at: datetime
     _updated_at: datetime
 
@@ -44,8 +47,8 @@ class AccountSynchronizationOperation:
         account_id: UUID,
         mutation_type: SynchronizationMutationType,
         created_at: datetime,
-        desired_status: RemotePrincipalStatus | None = None,
-        desired_role: HumanRole | None = None,
+        desired_status: PrincipalStatus | None = None,
+        desired_role: AuthorizationRole | None = None,
     ) -> Self:
         """Create one validated synchronization request."""
         return cls._build(
@@ -65,8 +68,8 @@ class AccountSynchronizationOperation:
         business_operation_id: UUID,
         account_id: UUID,
         mutation_type: SynchronizationMutationType,
-        desired_status: RemotePrincipalStatus | None,
-        desired_role: HumanRole | None,
+        desired_status: PrincipalStatus | None,
+        desired_role: AuthorizationRole | None,
         created_at: datetime,
         updated_at: datetime,
     ) -> Self:
@@ -88,8 +91,8 @@ class AccountSynchronizationOperation:
         business_operation_id: UUID,
         account_id: UUID,
         mutation_type: SynchronizationMutationType,
-        desired_status: RemotePrincipalStatus | None,
-        desired_role: HumanRole | None,
+        desired_status: PrincipalStatus | None,
+        desired_role: AuthorizationRole | None,
         created_at: datetime,
         updated_at: datetime,
     ) -> Self:
@@ -99,10 +102,13 @@ class AccountSynchronizationOperation:
             raise DomainValidationError("Synchronization account id must be a UUID.")
         if not isinstance(mutation_type, SynchronizationMutationType):
             raise DomainValidationError("Synchronization mutation type is invalid.")
-        if desired_status is not None and not isinstance(desired_status, RemotePrincipalStatus):
+        if desired_status is not None and not isinstance(desired_status, PrincipalStatus):
             raise DomainValidationError("Desired remote principal status is invalid.")
-        if desired_role is not None and not isinstance(desired_role, HumanRole):
-            raise DomainValidationError("Desired human role is invalid.")
+        if desired_role is not None:
+            validate_human_authorization_role(
+                desired_role,
+                field_name="Desired human role",
+            )
         valid_shape = (
             mutation_type is SynchronizationMutationType.SET_STATUS
             and desired_status is not None
@@ -143,12 +149,12 @@ class AccountSynchronizationOperation:
         return self._mutation_type
 
     @property
-    def desired_status(self) -> RemotePrincipalStatus | None:
+    def desired_status(self) -> PrincipalStatus | None:
         """Return the desired status for a set-status mutation."""
         return self._desired_status
 
     @property
-    def desired_role(self) -> HumanRole | None:
+    def desired_role(self) -> AuthorizationRole | None:
         """Return the desired role for an assign-role mutation."""
         return self._desired_role
 

@@ -15,6 +15,15 @@ api
 api/application composition
 -> persistence adapters
 
+api/application composition
+-> target-specific pypokerlost clients
+
+application
+-> meaningful service-owned ports
+
+target-specific adapters
+-> generated pypokerlost methods
+
 configuration and observability
 -> infrastructure concerns
 ```
@@ -34,7 +43,7 @@ concerns; they do not own service use cases.
 | Layer | Responsibility |
 | --- | --- |
 | `api` | Application factory, lifespan, middleware, dependencies, routes, public schemas, OpenAPI, and safe errors. |
-| `application` | Commands, queries, results, handler contracts, and concrete use-case orchestration. |
+| `application` | Commands, queries, results, meaningful Protocol ports, handler contracts, and concrete use-case orchestration. |
 | `domain` | Framework-independent internal values and closed domain or platform categories. |
 | `persistence` | SQLAlchemy metadata, sessions, repositories, result readers, projections, and concrete adapters. |
 | `configuration` | Typed settings, environment loading, and startup validation. |
@@ -48,21 +57,26 @@ than sharing one model across layers.
 ## Outbound integration boundary
 
 No current route or application handler calls authService, so the composition root has no outbound
-client, provider, credentials, scopes, or retry policy. Existing persisted provisioning and
-synchronization state is a local workflow foundation, not proof that a remote call is implemented.
+client, token port or adapter, credentials, scopes, token storage, or retry policy. Existing
+persisted provisioning and synchronization state is a local workflow foundation, not proof that a
+remote call is implemented.
 
 When an actual generated authService method is adopted, `api` composition owns one target-specific
 lifespan client and publishes it through an explicitly named typed `ApplicationResources` field.
-Application orchestration may consume that focused dependency but domain objects remain independent
-of SDK classes. Outbound SDK middleware is distinct from inbound FastAPI request middleware:
-`RetryMiddleware` is outermost, `BearerTokenMiddleware` resolves service credentials inside it, and
-retry remains disabled without an explicit per-call policy.
+Application orchestration consumes a service-owned port implemented by a focused pypokerlost
+adapter. That adapter calls the generated `oauth.token` method when its use case requires a token
+and supplies authentication through generic per-call headers. The SDK does not own credentials,
+token storage, refresh, or bearer middleware. Retry remains disabled unless a replay-safe call opts
+in with `RequestOptions(retry=PokerLostRetryPolicy())`; no database transaction spans a remote
+attempt or retry sleep.
 
 ## Runtime foundation
 
 `docs/architecture/request-lifecycle.md` explains composition and per-request flow.
 `docs/architecture/persistence-and-transactions.md` defines PostgreSQL session ownership. The API
-wire surface is documented separately in `docs/api/overview.md`.
+wire surface is documented separately in `docs/api/overview.md`. When `SERVICE.md` declares a real
+outbound target, `docs/architecture/inter-service-clients.md` defines the target-specific SDK
+client, service-owned token port and adapter, retry, dependency, and lifecycle extension.
 
 `SERVICE.md` defines the accounts domain responsibilities implemented by the existing entities,
 repositories, migration, and security/idempotency primitives. A concrete HTTP operation is added

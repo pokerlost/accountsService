@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from pypokerlost.contracts.authorization import AuthorizationRole, PrincipalStatus
 from sqlalchemy import insert, select
 
 from domain.business_operations import AccountSynchronizationOperation
-from domain.enums import HumanRole, RemotePrincipalStatus, SynchronizationMutationType
+from domain.enums import SynchronizationMutationType
 from persistence.database.models import AccountSynchronizationOperationModel
 
 from .base import SQLAlchemyRepository
@@ -20,11 +21,11 @@ def _to_domain(model: AccountSynchronizationOperationModel) -> AccountSynchroniz
         account_id=model.account_id,
         mutation_type=SynchronizationMutationType(model.mutation_type),
         desired_status=(
-            RemotePrincipalStatus(model.desired_status)
-            if model.desired_status is not None
-            else None
+            PrincipalStatus(model.desired_status) if model.desired_status is not None else None
         ),
-        desired_role=HumanRole(model.desired_role) if model.desired_role is not None else None,
+        desired_role=(
+            AuthorizationRole(model.desired_role) if model.desired_role is not None else None
+        ),
         created_at=model.created_at,
         updated_at=model.updated_at,
     )

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from pypokerlost.contracts.authorization import AuthorizationRole, PrincipalStatus
 from sqlalchemy import and_, insert, or_, select, update
 
 from domain.business_operations import AccountProvisioningOperation
-from domain.enums import HumanRole, RemotePrincipalStatus
 from persistence.database.models import AccountProvisioningOperationModel
 
 from .base import SQLAlchemyRepository
@@ -25,10 +25,10 @@ def _to_domain(model: AccountProvisioningOperationModel) -> AccountProvisioningO
     return AccountProvisioningOperation.hydrate(
         business_operation_id=model.business_operation_id,
         account_id=model.account_id,
-        requested_role=HumanRole(model.requested_role),
+        requested_role=AuthorizationRole(model.requested_role),
         remote_principal_id=model.remote_principal_id,
         remote_principal_status=(
-            RemotePrincipalStatus(model.remote_principal_status)
+            PrincipalStatus(model.remote_principal_status)
             if model.remote_principal_status is not None
             else None
         ),

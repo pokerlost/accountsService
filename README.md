@@ -41,6 +41,12 @@ The identifiers shown are the generated `.env.example` values. Both are required
 be changed without changing the root HTTP path. Both responses use `ApplicationResponse`; see
 `docs/getting-started/quickstart.md` and `docs/api/public-surface.md`.
 
+The SDK source defines transport, shared authorization contracts, generic request headers, and the
+canonical explicit per-call retry policy. A consuming service owns credentials and token
+orchestration behind application ports and adapters. The pristine service creates no target
+client, credentials, token storage, or retry settings; extension guidance lives in
+`docs/architecture/inter-service-clients.md`.
+
 ## Development and deployment
 
 Run `make help` for the thin local tool interface. The regular quality entry points are:

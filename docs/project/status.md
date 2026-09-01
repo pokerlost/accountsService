@@ -28,15 +28,16 @@ repositories, migration, and idempotency state are service-owned foundations rat
 API operations.
 
 In particular, accountsService currently calls no generated authService method. It has no
-authService `Client` in lifespan or `ApplicationResources`, no target settings, no service client
-credentials, no requested scope bundle, no retry policy applied to a call, and no related Kubernetes
-Secret wiring. This is intentional: the target client is added only with the first real operation,
-using the authenticated lifecycle and transaction boundary defined in
-`docs/api/openapi-and-sdk.md` and `docs/architecture/persistence-and-transactions.md`.
+authService `Client` in lifespan or `ApplicationResources`, no target settings, service-owned token
+port or adapter, credentials, requested scope bundle, token storage, retry policy applied to a call,
+or related Kubernetes Secret wiring. This is intentional: those resources are added only with the
+first real operation. The service-owned token boundary and explicit `PokerLostRetryPolicy` opt-in
+are documented in `docs/architecture/inter-service-clients.md`; transaction boundaries are defined
+in `docs/architecture/persistence-and-transactions.md`.
 
-`SERVICE.md` must define the concrete service purpose, responsibilities, and service-specific rules
-before those capabilities are added. Future domain documentation should describe only
-responsibilities established there and must be listed in `docs/index.md` when introduced.
+`SERVICE.md` defines the concrete service purpose, responsibilities, and service-specific rules.
+Future domain documentation must describe only responsibilities established there and must be
+listed in `docs/index.md` when introduced.
 
 See `docs/architecture/overview.md` for layer ownership and
 `docs/development/contributing.md` for change discipline.

@@ -16,10 +16,12 @@ and resources are attached to application state for dependencies. Shutdown remov
 disposes the engine.
 
 There is currently no authService call site, so lifespan does not create an authService client or
-token provider and `ApplicationResources` has no placeholder client field. When an implemented
-operation adds that target, lifespan constructs one authenticated `pypokerlost.Client`, starts it
-before publishing resources, and closes it in reverse ownership order before disposing dependencies.
-The client is reused across requests rather than created by a request dependency.
+token port or adapter, and `ApplicationResources` has no placeholder client field. When an
+implemented operation adds that target, lifespan constructs and starts one target-specific
+`pypokerlost.Client` before publishing resources, stores it in an explicitly named typed field,
+reuses it across requests, and stops it in reverse ownership order. Partial startup failure unwinds
+resources that already started. Credentials, requested scopes, audience, and any token storage or
+refresh remain accountsService-owned and are added only for the implemented use case.
 
 Creating the engine does not itself prove a PostgreSQL connection. A route opens a request session
 only when it declares the database dependency; the pristine root and OpenAPI routes do not.
@@ -55,16 +57,23 @@ create_app
    `ApplicationResponse` envelope documented in `docs/api/application-response.md`. FastAPI
    validates and serializes the declared response model.
 
+When an application workflow makes an outbound call, it depends on a service-owned application
+port whose adapter resolves the named lifespan-owned client. Token orchestration remains in that
+service, while transport retry is enabled only by
+`RequestOptions(retry=PokerLostRetryPolicy())`. A request-owned database transaction must end
+before token acquisition, the remote call, or backoff. See
+`docs/architecture/inter-service-clients.md` for the complete pattern.
+
 The two pristine endpoints stop at the route: they have no application handler, repository, query
 adapter, or database dependency.
 
 ## Future outbound call phase
 
 An application flow that adopts authService must leave its request-owned PostgreSQL transaction
-before bearer token acquisition, the SDK call, or any retry sleep. It uses the generated method and
-the lifespan-owned typed client dependency. `RetryMiddleware` remains inert unless that exact call
-passes `RequestOptions(retry=RetryPolicy(...))`, and middleware never automatically replays `401` or
-`403`.
+before service-owned token acquisition, the SDK call, or any retry sleep. It uses a service-owned
+application port and pypokerlost adapter with the generated method and lifespan-owned typed client.
+Retry remains disabled unless that exact call passes
+`RequestOptions(retry=PokerLostRetryPolicy())`; `401` and `403` are never automatically replayed.
 
 For a replay-safe mutation, every attempt carries the same `business_operation_id` and semantic
 payload. A later short transaction records the remote result or reconciliation state. The current

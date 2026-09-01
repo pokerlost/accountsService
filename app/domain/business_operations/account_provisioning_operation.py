@@ -7,8 +7,10 @@ from datetime import datetime
 from typing import Self
 from uuid import UUID
 
-from domain.enums import HumanRole, RemotePrincipalStatus
+from pypokerlost.contracts.authorization import AuthorizationRole, PrincipalStatus
+
 from domain.errors import DomainConflictError, DomainValidationError
+from domain.human_role_policy import validate_human_authorization_role
 
 
 def _validate_timestamp(value: datetime, *, name: str) -> None:
@@ -23,9 +25,9 @@ class AccountProvisioningOperation:
 
     _business_operation_id: UUID
     _account_id: UUID
-    _requested_role: HumanRole
+    _requested_role: AuthorizationRole
     _remote_principal_id: UUID | None
-    _remote_principal_status: RemotePrincipalStatus | None
+    _remote_principal_status: PrincipalStatus | None
     _created_at: datetime
     _updated_at: datetime
 
@@ -41,7 +43,7 @@ class AccountProvisioningOperation:
         *,
         business_operation_id: UUID,
         account_id: UUID,
-        requested_role: HumanRole,
+        requested_role: AuthorizationRole,
         created_at: datetime,
     ) -> Self:
         """Create a provisioning workflow before any remote result exists."""
@@ -61,9 +63,9 @@ class AccountProvisioningOperation:
         *,
         business_operation_id: UUID,
         account_id: UUID,
-        requested_role: HumanRole,
+        requested_role: AuthorizationRole,
         remote_principal_id: UUID | None,
-        remote_principal_status: RemotePrincipalStatus | None,
+        remote_principal_status: PrincipalStatus | None,
         created_at: datetime,
         updated_at: datetime,
     ) -> Self:
@@ -84,9 +86,9 @@ class AccountProvisioningOperation:
         *,
         business_operation_id: UUID,
         account_id: UUID,
-        requested_role: HumanRole,
+        requested_role: AuthorizationRole,
         remote_principal_id: UUID | None,
-        remote_principal_status: RemotePrincipalStatus | None,
+        remote_principal_status: PrincipalStatus | None,
         created_at: datetime,
         updated_at: datetime,
     ) -> Self:
@@ -94,12 +96,14 @@ class AccountProvisioningOperation:
             raise DomainValidationError("Business operation id must be a UUID.")
         if not isinstance(account_id, UUID):
             raise DomainValidationError("Provisioning account id must be a UUID.")
-        if not isinstance(requested_role, HumanRole):
-            raise DomainValidationError("Requested human role is invalid.")
+        validate_human_authorization_role(
+            requested_role,
+            field_name="Requested human role",
+        )
         if remote_principal_id is not None and not isinstance(remote_principal_id, UUID):
             raise DomainValidationError("Remote principal id must be a UUID when set.")
         if remote_principal_status is not None and not isinstance(
-            remote_principal_status, RemotePrincipalStatus
+            remote_principal_status, PrincipalStatus
         ):
             raise DomainValidationError("Remote principal status is invalid.")
         if (remote_principal_id is None) != (remote_principal_status is None):
@@ -128,7 +132,7 @@ class AccountProvisioningOperation:
         return self._account_id
 
     @property
-    def requested_role(self) -> HumanRole:
+    def requested_role(self) -> AuthorizationRole:
         """Return the explicitly requested role without inheritance semantics."""
         return self._requested_role
 
@@ -138,7 +142,7 @@ class AccountProvisioningOperation:
         return self._remote_principal_id
 
     @property
-    def remote_principal_status(self) -> RemotePrincipalStatus | None:
+    def remote_principal_status(self) -> PrincipalStatus | None:
         """Return the last recorded remote principal status."""
         return self._remote_principal_status
 
@@ -155,13 +159,13 @@ class AccountProvisioningOperation:
     def record_remote_result(
         self,
         remote_principal_id: UUID,
-        remote_principal_status: RemotePrincipalStatus,
+        remote_principal_status: PrincipalStatus,
         updated_at: datetime,
     ) -> None:
         """Record a remote result without permitting principal identity replacement."""
         if not isinstance(remote_principal_id, UUID):
             raise DomainValidationError("Remote principal id must be a UUID.")
-        if not isinstance(remote_principal_status, RemotePrincipalStatus):
+        if not isinstance(remote_principal_status, PrincipalStatus):
             raise DomainValidationError("Remote principal status is invalid.")
         _validate_timestamp(updated_at, name="Provisioning update time")
         if (
