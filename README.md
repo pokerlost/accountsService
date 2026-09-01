@@ -2,7 +2,7 @@
 
 `accountsService` owns the account and credential domain described in `SERVICE.md`.
 The current foundation includes PostgreSQL models for resumable account workflows, typed password
-and fingerprint policy, SDK-compatible API/OpenAPI publication, observability, Docker, and Helm.
+policy, SDK-compatible API/OpenAPI publication, observability, Docker, and Helm.
 Concrete HTTP business operations are added only when their full application flow is implemented.
 
 Read `docs/index.md` for the complete guide and `AGENTS.md` for normative engineering rules.

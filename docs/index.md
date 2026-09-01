@@ -24,7 +24,6 @@ and the current boundary for adopting generated PokerLost inter-service clients.
 - `docs/architecture/request-lifecycle.md` — request lifecycle.
 - `docs/architecture/persistence-and-transactions.md` — persistence and transactions.
 - `docs/architecture/inter-service-clients.md` — outbound client, token ownership, and retry.
-- `docs/architecture/business-operation-fingerprinting.md` — idempotency fingerprinting.
 
 ## Development
 

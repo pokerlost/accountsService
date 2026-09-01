@@ -12,7 +12,6 @@ from domain.enums import Environment
 from service import SERVICE_ENV_PREFIX
 
 from .application import ApplicationSettings
-from .business_operation_fingerprint import BusinessOperationFingerprintSettings
 from .database import DatabaseSettings
 from .http import HTTPSettings
 from .logfire import LogfireSettings
@@ -41,9 +40,6 @@ class Settings(BaseSettings):
         description="Required API operation ID and path for OpenAPI publication.",
     )
     application: ApplicationSettings = Field(default_factory=ApplicationSettings)
-    business_operation_fingerprint: BusinessOperationFingerprintSettings = Field(
-        default_factory=BusinessOperationFingerprintSettings,
-    )
     database: DatabaseSettings
     http: HTTPSettings = Field(default_factory=HTTPSettings)
     logfire: LogfireSettings = Field(default_factory=LogfireSettings)
@@ -52,7 +48,6 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_service_requirements(self) -> Self:
         """Fail fast when mandatory service runtime configuration is absent."""
-        self.business_operation_fingerprint.require_secret()
         if self.application.environment is Environment.PRODUCTION and not (
             self.logfire.enabled and self.logfire.send_to_logfire
         ):

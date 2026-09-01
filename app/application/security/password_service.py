@@ -14,7 +14,7 @@ from argon2.low_level import Type
 from configuration.password import PasswordSettings
 from domain.accounts import PasswordCredential
 
-type Clock = Callable[[], datetime]
+type Clock = Callable[..., datetime]
 
 
 class PasswordPolicyError(ValueError):

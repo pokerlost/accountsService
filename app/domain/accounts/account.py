@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Final, Self
 from uuid import UUID
 
-from pypokerlost.contracts.authorization import AuthorizationRole
+from pypokerlost.types import AuthorizationRole
 
 from domain.enums import AccountStatus
 from domain.errors import (

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pypokerlost.contracts.authorization import AuthorizationRole
+from pypokerlost.types import AuthorizationRole
 from sqlalchemy import insert, select, update
 
 from domain.accounts import Account, CanonicalUsername, Nickname

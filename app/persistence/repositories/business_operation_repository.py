@@ -8,7 +8,6 @@ from uuid import UUID
 from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 
-from application.idempotency import BusinessOperationFingerprint, FingerprintComparison
 from domain.business_operations import BusinessOperation
 from domain.enums import BusinessOperationState, BusinessOperationType
 from persistence.database.models import BusinessOperationModel
@@ -17,10 +16,10 @@ from .base import SQLAlchemyRepository
 
 
 class BusinessOperationConflictError(RuntimeError):
-    """Indicate reuse of an operation key with different payload semantics."""
+    """Indicate reuse of an operation key for a different operation type."""
 
     def __init__(self) -> None:
-        super().__init__("Business operation key conflicts with its registered payload.")
+        super().__init__("Business operation key conflicts with its registered operation type.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,8 +35,6 @@ def _to_domain(model: BusinessOperationModel) -> BusinessOperation:
     return BusinessOperation.hydrate(
         business_operation_id=model.business_operation_id,
         operation_type=BusinessOperationType(model.operation_type),
-        payload_fingerprint=bytes(model.payload_fingerprint),
-        fingerprint_key_version=model.fingerprint_key_version,
         state=BusinessOperationState(model.state),
         account_id=model.account_id,
         attempt_count=model.attempt_count,
@@ -67,8 +64,6 @@ class BusinessOperationRepository(SQLAlchemyRepository):
             .values(
                 business_operation_id=operation.business_operation_id,
                 operation_type=operation.operation_type.value,
-                payload_fingerprint=operation.payload_fingerprint,
-                fingerprint_key_version=operation.fingerprint_key_version,
                 state=operation.state.value,
                 account_id=operation.account_id,
                 attempt_count=operation.attempt_count,
@@ -98,17 +93,6 @@ class BusinessOperationRepository(SQLAlchemyRepository):
         )
         existing = existing_result.one()
         if existing.operation_type != operation.operation_type.value:
-            raise BusinessOperationConflictError
-
-        stored_fingerprint = BusinessOperationFingerprint(
-            digest=bytes(existing.payload_fingerprint),
-            key_version=existing.fingerprint_key_version,
-        )
-        candidate_fingerprint = BusinessOperationFingerprint(
-            digest=operation.payload_fingerprint,
-            key_version=operation.fingerprint_key_version,
-        )
-        if stored_fingerprint.compare(candidate_fingerprint) is FingerprintComparison.CONFLICT:
             raise BusinessOperationConflictError
 
         return BusinessOperationRegistrationResult(

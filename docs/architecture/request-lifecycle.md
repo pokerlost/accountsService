@@ -9,11 +9,10 @@ response handling in the generated service.
 and registers request-context middleware, exception handlers, routes, and instrumentation. It
 disables the built-in OpenAPI and documentation URLs.
 
-Application lifespan creates the async SQLAlchemy engine and session factory, the configured
-password service, and the business-operation fingerprinter. It instruments the engine when
-configured and stores these process-owned components in immutable `ApplicationResources`. Settings
-and resources are attached to application state for dependencies. Shutdown removes that state and
-disposes the engine.
+Application lifespan creates the async SQLAlchemy engine, session factory, and configured password
+service. It instruments the engine when configured and stores these process-owned components in
+immutable `ApplicationResources`. Settings and resources are attached to application state for
+dependencies. Shutdown removes that state and disposes the engine.
 
 There is currently no authService call site, so lifespan does not create an authService client or
 token port or adapter, and `ApplicationResources` has no placeholder client field. When an

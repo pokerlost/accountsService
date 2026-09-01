@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Self
 from uuid import UUID
 
-from pypokerlost.contracts.authorization import AuthorizationRole, PrincipalStatus
+from pypokerlost.types import AuthorizationRole, PrincipalStatus
 
 from domain.errors import DomainConflictError, DomainValidationError
 from domain.human_role_policy import validate_human_authorization_role

@@ -15,7 +15,6 @@ from sqlalchemy import (
     Text,
     text,
 )
-from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,14 +33,6 @@ class BusinessOperationModel(TimestampMixin, Base):
             name="ck_business_operations_operation_type",
         ),
         CheckConstraint(
-            "octet_length(payload_fingerprint) = 32",
-            name="ck_business_operations_payload_fingerprint_length",
-        ),
-        CheckConstraint(
-            "fingerprint_key_version > 0",
-            name="ck_business_operations_fingerprint_key_version",
-        ),
-        CheckConstraint(
             "state IN "
             "('pending_remote', 'retryable_error', 'remote_applied', 'completed', 'blocked')",
             name="ck_business_operations_state",
@@ -57,8 +48,6 @@ class BusinessOperationModel(TimestampMixin, Base):
         primary_key=True,
     )
     operation_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    payload_fingerprint: Mapped[bytes] = mapped_column(BYTEA, nullable=False)
-    fingerprint_key_version: Mapped[int] = mapped_column(Integer, nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     account_id: Mapped[UUID | None] = mapped_column(
         PostgreSQLUUID(as_uuid=True),

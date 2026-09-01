@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Self
 from uuid import UUID
@@ -15,7 +15,6 @@ from domain.errors import (
     InvalidStateTransitionError,
 )
 
-_FINGERPRINT_LENGTH: Final[int] = 32
 _ERROR_CODE_PATTERN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _ALLOWED_STATE_TRANSITIONS: Final[
     dict[BusinessOperationState, frozenset[BusinessOperationState]]
@@ -63,8 +62,6 @@ class BusinessOperation:
 
     _business_operation_id: UUID
     _operation_type: BusinessOperationType
-    _payload_fingerprint: bytes = field(repr=False)
-    _fingerprint_key_version: int
     _state: BusinessOperationState
     _account_id: UUID | None
     _attempt_count: int
@@ -74,7 +71,7 @@ class BusinessOperation:
     _updated_at: datetime
 
     def __init__(self) -> None:
-        """Prevent construction that bypasses fingerprint and state validation."""
+        """Prevent construction that bypasses identity and state validation."""
         raise TypeError("Use BusinessOperation.create() or BusinessOperation.hydrate().")
 
     @classmethod
@@ -83,8 +80,6 @@ class BusinessOperation:
         *,
         business_operation_id: UUID,
         operation_type: BusinessOperationType,
-        payload_fingerprint: bytes,
-        fingerprint_key_version: int,
         created_at: datetime,
         account_id: UUID | None = None,
     ) -> Self:
@@ -92,8 +87,6 @@ class BusinessOperation:
         return cls._build(
             business_operation_id=business_operation_id,
             operation_type=operation_type,
-            payload_fingerprint=payload_fingerprint,
-            fingerprint_key_version=fingerprint_key_version,
             state=BusinessOperationState.PENDING_REMOTE,
             account_id=account_id,
             attempt_count=0,
@@ -109,8 +102,6 @@ class BusinessOperation:
         *,
         business_operation_id: UUID,
         operation_type: BusinessOperationType,
-        payload_fingerprint: bytes,
-        fingerprint_key_version: int,
         state: BusinessOperationState,
         account_id: UUID | None,
         attempt_count: int,
@@ -123,8 +114,6 @@ class BusinessOperation:
         return cls._build(
             business_operation_id=business_operation_id,
             operation_type=operation_type,
-            payload_fingerprint=payload_fingerprint,
-            fingerprint_key_version=fingerprint_key_version,
             state=state,
             account_id=account_id,
             attempt_count=attempt_count,
@@ -140,8 +129,6 @@ class BusinessOperation:
         *,
         business_operation_id: UUID,
         operation_type: BusinessOperationType,
-        payload_fingerprint: bytes,
-        fingerprint_key_version: int,
         state: BusinessOperationState,
         account_id: UUID | None,
         attempt_count: int,
@@ -154,17 +141,6 @@ class BusinessOperation:
             raise DomainValidationError("Business operation id must be a UUID.")
         if not isinstance(operation_type, BusinessOperationType):
             raise DomainValidationError("Business operation type is invalid.")
-        if (
-            not isinstance(payload_fingerprint, bytes)
-            or len(payload_fingerprint) != _FINGERPRINT_LENGTH
-        ):
-            raise DomainValidationError("Payload fingerprint must be exactly 32 bytes.")
-        if (
-            not isinstance(fingerprint_key_version, int)
-            or isinstance(fingerprint_key_version, bool)
-            or fingerprint_key_version <= 0
-        ):
-            raise DomainValidationError("Fingerprint key version must be a positive integer.")
         if not isinstance(state, BusinessOperationState):
             raise DomainValidationError("Business operation state is invalid.")
         if account_id is not None and not isinstance(account_id, UUID):
@@ -182,8 +158,6 @@ class BusinessOperation:
         operation = object.__new__(cls)
         operation._business_operation_id = business_operation_id
         operation._operation_type = operation_type
-        operation._payload_fingerprint = payload_fingerprint
-        operation._fingerprint_key_version = fingerprint_key_version
         operation._state = state
         operation._account_id = account_id
         operation._attempt_count = attempt_count
@@ -202,16 +176,6 @@ class BusinessOperation:
     def operation_type(self) -> BusinessOperationType:
         """Return the distributed mutation category."""
         return self._operation_type
-
-    @property
-    def payload_fingerprint(self) -> bytes:
-        """Return only the stored keyed digest, never its canonical plaintext input."""
-        return self._payload_fingerprint
-
-    @property
-    def fingerprint_key_version(self) -> int:
-        """Return the dedicated HMAC key version used for the digest."""
-        return self._fingerprint_key_version
 
     @property
     def state(self) -> BusinessOperationState:

@@ -38,7 +38,7 @@ across bearer token acquisition, the `pypokerlost` SDK call, or retry backoff. A
 and a local database transaction cannot form one atomic transaction.
 
 Structure a mutation as explicit phases: use a short transaction to establish or load the persisted
-business operation and semantic fingerprint, close that transaction, perform the remote call, then
+business operation, close that transaction, perform the remote call, then
 use another short transaction to record the outcome or reconciliation state. Every allowed retry
 reuses the same `business_operation_id` and the same semantic payload. Retry is transport recovery,
 not a replacement for persisted idempotency or reconciliation after an ambiguous outcome.
@@ -57,7 +57,7 @@ treat transport retry as durable business reconciliation.
 
 Mutation retry is allowed only when the target contract persists idempotency and every attempt
 uses the same `business_operation_id` and the same semantic payload. The SDK neither creates that
-key nor persists fingerprint, workflow, outbox, or reconciliation state. Detailed client and retry
+key nor persists workflow, outbox, or reconciliation state. Detailed client and retry
 composition is documented in `docs/architecture/inter-service-clients.md`.
 
 ## Failure mapping

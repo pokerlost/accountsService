@@ -10,7 +10,6 @@ environment:
   ACCOUNTSSERVICE_LOGFIRE__SEND_TO_LOGFIRE: "false"
   ACCOUNTSSERVICE_LOGFIRE__CONSOLE: "true"
   ACCOUNTSSERVICE_LOGFIRE__MINIMUM_LEVEL: info
-  ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__KEY_VERSION: "1"
 
 secretEnvironment:
   ACCOUNTSSERVICE_LOGFIRE__TOKEN:
@@ -19,10 +18,6 @@ secretEnvironment:
     enabled: true
     name: accountsservice-local-runtime
     key: database-url
-  ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__SECRET:
-    enabled: true
-    name: accountsservice-local-runtime
-    key: business-operation-fingerprint-secret
 
 gunicorn:
   workers: 1

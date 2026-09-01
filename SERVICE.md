@@ -33,7 +33,7 @@ events, tournaments, bets, balances or blockchain business logic.
 - Auto is reserved for service principals and never has a HumanAccount or password.
 - Roles have no implicit inheritance.
 - Master is not a global authorization bypass.
-- Protected operations authorize through OAuth2 scopes, never through role checks.
+- Protected operations authorize through exact Pokerlost scopes, never through role checks.
 - authService is authoritative for roles, scope grants, sessions and tokens.
 - accountsService is authoritative for usernames, nicknames and password credentials.
 - Access and refresh tokens are issued only by authService.
@@ -52,22 +52,23 @@ client, target settings, client credentials, requested scope bundle, or Kubernet
 
 When a concrete operation introduces that dependency:
 
-- create one target-specific `pypokerlost.Client` in FastAPI lifespan, store it in an explicitly
-  typed `ApplicationResources` field, reuse it across requests, and close it on shutdown;
-- define a service-owned application port for token acquisition and implement it with a
-  service-owned pypokerlost adapter that calls the generated `oauth.token` method;
-- keep client credentials, requested scopes, target resource, and any token storage or refresh
-  orchestration in accountsService composition rather than the SDK;
-- use the exact target resource `urn:pokerlost:service:authService` and request only scopes required
-  by generated operations that are actually called;
+- create one target-specific `PokerlostClient` and one dedicated authorization-target
+  `PokerlostClient` without authorization middleware in FastAPI lifespan, store them in explicitly
+  typed `ApplicationResources` fields, reuse them across requests, and close them on shutdown;
+- configure one `PokerlostAuthorizationMiddleware` with client credentials, the logical target
+  audience, and an application-selected `PokerlostTokenStore` implementation;
+- let each generated method supply its exact `required_scopes`; never request a wildcard or a
+  service-wide scope bundle;
+- send credentials, refresh tokens, and access tokens only in the canonical JSON request bodies;
 - keep retry disabled unless a semantically safe call passes
-  `RequestOptions(retry=PokerLostRetryPolicy())`;
+  `PokerlostRequestOptions(retry_policy=PokerlostRetryPolicy())`;
 - retry a mutation only with the same `business_operation_id` and the same semantic payload, backed
   by the target operation's persisted idempotency contract;
 - never replay `401` or `403` automatically, and never hold a request-owned PostgreSQL transaction
   across token acquisition, the remote call, or retry backoff;
-- keep client credentials, authorization headers, access tokens, and sensitive payloads out of
-  source, ConfigMaps, OpenAPI, errors, representations, telemetry, and logs.
+- keep client credentials, access tokens, refresh tokens, and sensitive payloads out of source,
+  ConfigMaps, errors, representations, telemetry, and logs; OpenAPI describes only the body schema
+  and never exposes concrete secret values.
 
 ### Nickname policy
 
@@ -97,19 +98,3 @@ salt_len = 16
 These baseline values are typed deployment settings. Changes are applied by constructing one
 process-owned password service at startup; stored Argon2id hashes are rehashed only after a
 successful verification when the active policy differs.
-
-### Business-operation fingerprints
-
-- Persist only the HMAC-SHA-256 digest and its positive key version, never canonical plaintext.
-- Build fingerprints from explicit semantic fields for each concrete idempotent operation.
-- Supply the fingerprint secret through
-  `ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__SECRET` and keep it out of ConfigMaps, logs,
-  OpenAPI, and committed configuration.
-- Configure the non-secret active version through
-  `ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__KEY_VERSION`.
-- Do not rotate the active key until every retained idempotency record produced with the old key
-  has expired or been deleted. Without a retained versioned keyring, a different key version is a
-  conflict rather than a replay match.
-- This pre-production service does not retain compatibility with records created by the superseded
-  v1 canonical format. Clear or reset those local idempotency records before deploying v2; there is
-  no runtime dual-format path or schema migration that makes v1 records comparable with v2.

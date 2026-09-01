@@ -66,19 +66,6 @@ The database URL must include a username, password, host, and database. It is tr
 | `minimum_level` | `ACCOUNTSSERVICE_LOGFIRE__MINIMUM_LEVEL` | Minimum recorded level. |
 | `token` | `ACCOUNTSSERVICE_LOGFIRE__TOKEN` | Optional write token, required when remote delivery is enabled. |
 
-## `business_operation_fingerprint`
-
-| Field | Environment variable | Default/bounds | Purpose |
-| --- | --- | --- | --- |
-| `secret` | `ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__SECRET` | Required; at least 32 UTF-8 bytes | Dedicated HMAC-SHA-256 key for resumable operation payload fingerprints. |
-| `key_version` | `ACCOUNTSSERVICE_BUSINESS_OPERATION_FINGERPRINT__KEY_VERSION` | `1`; integer at least `1` | Version persisted beside every fingerprint digest. |
-
-The secret is mandatory because accountsService owns active idempotent workflows. Only digest and
-key version are persisted. Do not rotate the active key until every retained record made with the
-old key has expired or been deleted; the current key-rotation policy intentionally has no
-overlapping keyring. Records produced by the superseded pre-production canonical format must be
-cleared before v2 is enabled; there is no dual-format comparison path.
-
 ## `password`
 
 | Field | Environment variable | Default | Valid range |
@@ -95,8 +82,8 @@ The minimum must not exceed the maximum. Password length counts the exact Python
 accountsService does not trim or normalize it. One lifespan-owned `Argon2PasswordService` uses all
 seven values for validation, hashing, dummy verification, and rehash-policy checks.
 
-Keep the fingerprint secret, Logfire token, and database URL outside source control. Kubernetes
-supplies them through Secret references rather than the chart ConfigMap; see
+Keep the Logfire token and database URL outside source control. Kubernetes supplies them through
+Secret references rather than the chart ConfigMap; see
 `docs/development/containers-and-kubernetes.md`.
 
 ## Outbound service targets

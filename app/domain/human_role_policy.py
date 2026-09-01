@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from pypokerlost.contracts.authorization import AuthorizationRole
+from pypokerlost.types import AuthorizationRole
 
 from domain.errors import DomainValidationError
 

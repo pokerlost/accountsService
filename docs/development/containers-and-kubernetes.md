@@ -36,11 +36,10 @@ The Deployment exposes the HTTP container port and configures both liveness and 
 The top-level Helm values `rootOperation` and `openapiOperation` map explicitly to
 `ACCOUNTSSERVICE_ROOT_OPERATION` and
 `ACCOUNTSSERVICE_OPENAPI_OPERATION` in the generated ConfigMap. Other non-secret
-environment values, including the fingerprint key version and password/Argon2 policy, come from
-the `environment` map. Database credentials, the required business-operation fingerprint secret,
-and the optional Logfire token use `secretEnvironment` references to existing Kubernetes Secret
-names and keys. Never place secret values in `environment`, a ConfigMap, a committed values file,
-or rendered documentation.
+environment values, including password/Argon2 policy, come from the `environment` map. Database
+credentials and the optional Logfire token use `secretEnvironment` references to existing
+Kubernetes Secret names and keys. Never place secret values in `environment`, a ConfigMap, a
+committed values file, or rendered documentation.
 
 The current chart has no authService target values or client-secret reference because the service
 has no implemented authService call. When such a call is added, its non-secret typed settings use

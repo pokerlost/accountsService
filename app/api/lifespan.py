@@ -7,7 +7,6 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from fastapi import FastAPI
 
-from application.idempotency import BusinessOperationFingerprinter
 from application.security import Argon2PasswordService
 from configuration import Settings
 from observability import instrument_database
@@ -27,11 +26,6 @@ def create_lifespan(settings: Settings) -> ApplicationLifespan:
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
-        business_operation_fingerprint_settings = settings.business_operation_fingerprint
-        business_operation_fingerprinter = BusinessOperationFingerprinter(
-            business_operation_fingerprint_settings.require_secret(),
-            key_version=business_operation_fingerprint_settings.key_version,
-        )
         password_service = Argon2PasswordService(settings.password)
         engine = create_database_engine(
             settings.database,
@@ -41,7 +35,6 @@ def create_lifespan(settings: Settings) -> ApplicationLifespan:
         application.state.resources = ApplicationResources(
             engine=engine,
             session_factory=create_session_factory(engine),
-            business_operation_fingerprinter=business_operation_fingerprinter,
             password_service=password_service,
         )
         application.state.settings = settings

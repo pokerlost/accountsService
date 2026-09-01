@@ -8,7 +8,7 @@ The repository provides the FastAPI composition root, typed configuration, reque
 error mapping, Logfire instrumentation, mandatory PostgreSQL session and transaction ownership,
 Alembic integration, Docker packaging, Helm resources, and the locked local quality workflow. It
 also contains the account/password domain, persistence models for resumable distributed account
-workflows, deterministic keyed fingerprints, and one lifespan-owned configured password service.
+workflows, and one lifespan-owned configured password service.
 
 The two base endpoints are ready with the `.env.example` values:
 
