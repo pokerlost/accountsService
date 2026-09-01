@@ -36,24 +36,22 @@ The Deployment exposes the HTTP container port and configures both liveness and 
 The top-level Helm values `rootOperation` and `openapiOperation` map explicitly to
 `ACCOUNTSSERVICE_ROOT_OPERATION` and
 `ACCOUNTSSERVICE_OPENAPI_OPERATION` in the generated ConfigMap. Other non-secret
-environment values, including password/Argon2 policy, come from the `environment` map. Database
-credentials and the optional Logfire token use `secretEnvironment` references to existing
+environment values, including the password/Argon2id policy, come from the `environment` map.
+Database credentials and the optional Logfire token use `secretEnvironment` references to existing
 Kubernetes Secret names and keys. Never place secret values in `environment`, a ConfigMap, a
 committed values file, or rendered documentation.
 
-The current chart has no authService target values or client-secret reference because the service
-has no implemented authService call. When such a call is added, its non-secret typed settings use
-the existing ConfigMap convention and only `ACCOUNTSSERVICE_AUTH_SERVICE__CLIENT_SECRET` uses
-`secretEnvironment`. Authorization values and access tokens are runtime-only and must never appear
-in chart values, rendered manifests, telemetry, or logs.
+The current chart contains no authService target, credential, token storage, or retry values
+because no implemented operation makes that call. A real target may add its base URL and request
+timeout through the existing non-secret `environment` convention. Credential and token-store
+inputs remain service-owned and are wired only with the use case; secrets use `secretEnvironment`.
+`PokerlostRetryPolicy` values never become deployment settings. Authentication material and tokens
+never become chart values, ConfigMap data, logs, or rendered manifests. See
+`docs/architecture/inter-service-clients.md` for the ownership and lifecycle pattern.
 
-The pristine chart contains no outbound target, credential, token storage, or retry values. A
-concrete service with a real target may add its base URL and request timeout through the existing
-non-secret `environment` or explicit ConfigMap convention. Credential and token-store inputs remain
-service-owned and are wired only when an implemented use case needs them; secrets use
-`secretEnvironment` and existing Kubernetes Secret references. `PokerLostRetryPolicy` values never
-become deployment settings. Authorization headers and tokens never become chart values, ConfigMap
-data, logs, or rendered manifests. See `docs/architecture/inter-service-clients.md` for the
-ownership and lifecycle pattern.
-
-The chart also disables service-account token mounting, requests a non-root runtime, uses a read-only root filesystem, drops Linux capabilities, and mounts a bounded writable temporary volume. Review rendered output and environment-specific Secret references before deployment; successful linting and rendering do not prove cluster readiness or application correctness.
+The ClusterIP is an internal target and must remain behind mandatory production HTTPS/TLS
+termination. Do not expose the generated HTTP container port directly as a plaintext production
+edge. The chart also disables service-account token mounting, requests a non-root runtime, uses a
+read-only root filesystem, drops Linux capabilities, and mounts a bounded writable temporary
+volume. Review rendered output and environment-specific Secret references before deployment;
+successful linting and rendering do not prove cluster readiness or application correctness.

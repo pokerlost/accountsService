@@ -17,10 +17,10 @@ override values from `.env` according to Pydantic Settings behavior.
 
 | Field | Environment variable | Required | Example |
 | --- | --- | --- | --- |
-| `root_operation` | `ACCOUNTSSERVICE_ROOT_OPERATION` | Yes | `accounts.getRoot` |
-| `openapi_operation` | `ACCOUNTSSERVICE_OPENAPI_OPERATION` | Yes | `openapi.get` |
+| `root_operation` | `ACCOUNTSSERVICE_ROOT_OPERATION` | Yes | `getRoot` |
+| `openapi_operation` | `ACCOUNTSSERVICE_OPENAPI_OPERATION` | Yes | `getOpenApi` |
 
-Both fields use `pypokerlost.types.APIOperation`, so invalid startup values fail validation. The
+Both fields use `pypokerlost.types.PokerlostOperation`, so invalid startup values fail validation. The
 root operation controls only the operation ID for `GET /`; the HTTP path remains `/`. The OpenAPI
 operation controls both its operation ID and its `"/" + operation_id` path. Business operation IDs
 remain source-defined stable contracts rather than environment settings.
@@ -98,6 +98,6 @@ settings group and one explicitly named field on root `Settings`. Its base URL a
 are deployment configuration. Token credentials, storage, refresh, requested exact scopes, and
 audience remain service-owned and are added only when the implemented use case needs them.
 
-Do not expose `PokerLostRetryPolicy` values as settings; its transport algorithm is fixed by the
+Do not expose `PokerlostRetryPolicy` values as settings; its transport algorithm is fixed by the
 SDK. Do not automatically add authService configuration to every service. The complete ownership
 pattern is in `docs/architecture/inter-service-clients.md`.

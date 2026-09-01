@@ -1,46 +1,29 @@
 # API errors
 
-This page documents the failure categories normalized by the generated API boundary and their safe
-public `ApplicationResponse[None]` forms.
+Central handlers serialize all supported failures as `PokerlostResponse[None]` without raw input or
+internal state.
 
 ## Runtime mappings
 
-`ACCOUNTSSERVICE` is the generated service error prefix. The pristine handlers use these
-verified mappings:
+| Source | Status | Stable error |
+| --- | --- | --- |
+| Missing/malformed body authentication | `401` | `AUTHENTICATION_REQUIRED` |
+| Invalid access token or audience | `401` | `INVALID_ACCESS_TOKEN` |
+| Missing exact scope | `403` | `INSUFFICIENT_SCOPE` |
+| Request validation | `422` | `ACCOUNTSSERVICE_VALIDATION_ERROR` |
+| Application not found | `404` | `ACCOUNTSSERVICE_NOT_FOUND` |
+| Application conflict | `409` | `ACCOUNTSSERVICE_CONFLICT` |
+| Invalid application operation | `422` | `ACCOUNTSSERVICE_INVALID_OPERATION` |
+| PostgreSQL unavailable | `503` | `ACCOUNTSSERVICE_DATABASE_UNAVAILABLE` |
+| Other database failure | `500` | `ACCOUNTSSERVICE_DATABASE_ERROR` |
+| Unexpected failure | `500` | `ACCOUNTSSERVICE_INTERNAL_ERROR` |
 
-| Source | HTTP status | Error code | Public message |
-| --- | --- | --- | --- |
-| Request validation | `422` | `ACCOUNTSSERVICE_VALIDATION_ERROR` | `Request validation failed` |
-| `NotFoundError` | `404` | `ACCOUNTSSERVICE_NOT_FOUND` | `Requested resource was not found.` |
-| `ConflictError` | `409` | `ACCOUNTSSERVICE_CONFLICT` | `Operation conflicts with current state.` |
-| `InvalidOperationError` | `422` | `ACCOUNTSSERVICE_INVALID_OPERATION` | `Operation is invalid.` |
-| `IntegrityError` | `500` | `ACCOUNTSSERVICE_INTEGRITY_ERROR` | `Application state is inconsistent.` |
-| Base application failure | `500` | `ACCOUNTSSERVICE_APPLICATION_ERROR` | `Application operation failed.` |
-| PostgreSQL unavailable | `503` | `ACCOUNTSSERVICE_DATABASE_UNAVAILABLE` | `Required database is unavailable` |
-| Other SQLAlchemy failure | `500` | `ACCOUNTSSERVICE_DATABASE_ERROR` | `Database operation failed` |
-| Unexpected exception | `500` | `ACCOUNTSSERVICE_INTERNAL_ERROR` | `Internal server error` |
+Framework not-found and method failures are also normalized. Public messages are fixed sanitized
+text. Validation errors never echo submitted values.
 
-Framework HTTP exceptions are also normalized. An unmatched path uses
-`ACCOUNTSSERVICE_NOT_FOUND` with `Resource not found`; an unsupported method uses
-`ACCOUNTSSERVICE_METHOD_NOT_ALLOWED` with `Method not allowed`. Other framework HTTP
-statuses retain their status and use `ACCOUNTSSERVICE_HTTP_ERROR` with
-`HTTP request failed`.
+An unavailable required verifier is a composition error and fails closed as an internal failure.
+Concrete verifier adapters map rejected tokens to `InvalidAccessTokenError`; unexpected verifier
+failures remain internal instead of being mislabeled as caller failures.
 
-## Application failures
-
-Application errors are transport-independent exceptions with stable public codes and messages.
-The API layer selects the HTTP status. A concrete service may add a specific application failure
-only when its responsibilities require one, then it must publish the corresponding
-`ApplicationResponse[None]` status on affected routes and update
-`docs/api/public-surface.md`.
-
-## Database and unexpected failures
-
-An exact driver connection refusal is normalized at the database engine boundary to SQLAlchemy's
-availability category and becomes `503`. Other SQLAlchemy failures become sanitized `500`
-responses. An exception that escapes the registered handlers is caught by request middleware and
-becomes the generic internal `500` response.
-
-Request and correlation identifiers accompany logs and response headers, not the JSON envelope.
-Public failures do not expose submitted values, tracebacks, SQL details, credentials, or other
-secrets. The envelope invariants are defined in `docs/api/application-response.md`.
+`retry_after` is null unless a handler has an explicit safe retry delay. No retry guidance is
+encoded outside the JSON envelope.

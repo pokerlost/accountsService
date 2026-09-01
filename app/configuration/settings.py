@@ -6,7 +6,7 @@ from typing import Self
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pypokerlost.types import APIOperation
+from pypokerlost.types import PokerlostOperation
 
 from domain.enums import Environment
 from service import SERVICE_ENV_PREFIX
@@ -33,10 +33,10 @@ class Settings(BaseSettings):
         validate_default=True,
     )
 
-    root_operation: APIOperation = Field(
+    root_operation: PokerlostOperation = Field(
         description="Required API operation ID published for GET /.",
     )
-    openapi_operation: APIOperation = Field(
+    openapi_operation: PokerlostOperation = Field(
         description="Required API operation ID and path for OpenAPI publication.",
     )
     application: ApplicationSettings = Field(default_factory=ApplicationSettings)

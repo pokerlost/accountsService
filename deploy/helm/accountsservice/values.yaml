@@ -1,6 +1,5 @@
-serviceIdentity: "accountsService"
-rootOperation: accounts.getRoot
-openapiOperation: openapi.get
+rootOperation: getRoot
+openapiOperation: getOpenApi
 
 replicaCount: 2
 
@@ -51,6 +50,7 @@ gunicorn:
   forwardedAllowIps: "127.0.0.1"
 
 service:
+  # Keep this ClusterIP behind mandatory deployment HTTPS/TLS termination.
   type: ClusterIP
   port: 80
 

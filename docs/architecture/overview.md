@@ -1,7 +1,6 @@
 # Architecture overview
 
-This page defines the generated service layers and their dependency direction without prescribing
-business behavior that belongs to a concrete service.
+This page defines the service layers and their dependency direction.
 
 ## Dependency direction
 
@@ -45,30 +44,14 @@ concerns; they do not own service use cases.
 | `api` | Application factory, lifespan, middleware, dependencies, routes, public schemas, OpenAPI, and safe errors. |
 | `application` | Commands, queries, results, meaningful Protocol ports, handler contracts, and concrete use-case orchestration. |
 | `domain` | Framework-independent internal values and closed domain or platform categories. |
-| `persistence` | SQLAlchemy metadata, sessions, repositories, result readers, projections, and concrete adapters. |
+| `persistence` | SQLAlchemy metadata, sessions, repository execution, and concrete adapters. |
 | `configuration` | Typed settings, environment loading, and startup validation. |
 | `observability` | Privacy-safe Logfire configuration and FastAPI/SQLAlchemy instrumentation. |
 | `cli` | Operator entry points such as local application startup. |
 
-Public request and response models remain API artifacts; ORM models and projections remain
-persistence artifacts. A route performs the explicit translation between those boundaries rather
-than sharing one model across layers.
-
-## Outbound integration boundary
-
-No current route or application handler calls authService, so the composition root has no outbound
-client, token port or adapter, credentials, scopes, token storage, or retry policy. Existing
-persisted provisioning and synchronization state is a local workflow foundation, not proof that a
-remote call is implemented.
-
-When an actual generated authService method is adopted, `api` composition owns one target-specific
-lifespan client and publishes it through an explicitly named typed `ApplicationResources` field.
-Application orchestration consumes a service-owned port implemented by a focused pypokerlost
-adapter. That adapter calls the generated `oauth.token` method when its use case requires a token
-and supplies authentication through generic per-call headers. The SDK does not own credentials,
-token storage, refresh, or bearer middleware. Retry remains disabled unless a replay-safe call opts
-in with `RequestOptions(retry=PokerLostRetryPolicy())`; no database transaction spans a remote
-attempt or retry sleep.
+Public request and response models remain API artifacts; ORM models remain persistence artifacts.
+When a service needs a read projection, it is a focused persistence artifact. A route performs the
+explicit translation between those boundaries rather than sharing one model across layers.
 
 ## Runtime foundation
 
@@ -76,8 +59,11 @@ attempt or retry sleep.
 `docs/architecture/persistence-and-transactions.md` defines PostgreSQL session ownership. The API
 wire surface is documented separately in `docs/api/overview.md`. When `SERVICE.md` declares a real
 outbound target, `docs/architecture/inter-service-clients.md` defines the target-specific SDK
-client, service-owned token port and adapter, retry, dependency, and lifecycle extension.
+client, middleware, token-store ownership, retry, and lifecycle extension. Inbound local
+verification uses the application port described in `docs/api/body-authorization.md`.
 
-`SERVICE.md` defines the accounts domain responsibilities implemented by the existing entities,
-repositories, migration, and security/idempotency primitives. A concrete HTTP operation is added
-only with its complete application orchestration and authorization contract.
+`accountsService` owns account/password domain values, Argon2id policy, concrete account and
+resumable-workflow tables, and focused repositories. These are service-owned foundations, not
+published HTTP operations. There is no current authService call site, so composition intentionally
+contains no outbound client, target settings, credentials, token storage, or applied retry policy.
+Those resources are added only with the first complete application flow that needs them.

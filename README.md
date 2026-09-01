@@ -1,17 +1,16 @@
 # accountsService
 
-`accountsService` owns the account and credential domain described in `SERVICE.md`.
-The current foundation includes PostgreSQL models for resumable account workflows, typed password
-policy, SDK-compatible API/OpenAPI publication, observability, Docker, and Helm.
-Concrete HTTP business operations are added only when their full application flow is implemented.
+`accountsService` owns the account and credential domain defined in `SERVICE.md`. The current
+foundation includes account/password models, resumable workflow persistence, a typed Argon2id
+policy, the private Pokerlost body-only JSON protocol, observability, Docker, and Helm. Concrete
+HTTP business operations are added only with their complete application flow.
 
-Read `docs/index.md` for the complete guide and `AGENTS.md` for normative engineering rules.
-Python 3.14 or newer is required.
+Read `docs/index.md` for the complete guide and `AGENTS.md` for normative engineering rules. Python
+3.14 or newer is required.
 
 ## Install
 
-The mandatory private `pypokerlost` dependency requires GitHub SSH read access. Create local
-configuration, verify the SSH identity, and install the locked environment:
+The mandatory private `pypokerlost` dependency requires GitHub SSH read access:
 
 ```bash
 cp .env.example .env
@@ -21,8 +20,7 @@ uv lock
 uv sync --locked
 ```
 
-Replace the local placeholders in `.env`; do not store secrets or private keys in the repository.
-See `docs/getting-started/installation.md` and `docs/getting-started/configuration.md` for details.
+Replace local placeholders in `.env`; never store secrets or private keys in the repository.
 
 ## Run
 
@@ -32,29 +30,28 @@ make run
 
 ## Base endpoints
 
-| method | path | operation_id | response_model |
+| method | path | operation_id | response |
 | --- | --- | --- | --- |
-| `GET` | `/` | `accounts.getRoot` | `RootResponse` |
-| `GET` | `/openapi.get` | `openapi.get` | `OpenAPIResponse` |
+| `GET` | `/` | `getRoot` | `PokerlostResponse[None]` |
+| `GET` | `/getOpenApi` | `getOpenApi` | `PokerlostResponse[dict[str, JSONValue]]` |
 
-The identifiers shown are the generated `.env.example` values. Both are required settings and may
-be changed without changing the root HTTP path. Both responses use `ApplicationResponse`; see
-`docs/getting-started/quickstart.md` and `docs/api/public-surface.md`.
+These public infrastructure endpoints accept no body or authentication. Every business operation
+uses `POST /<operationId>` and a typed JSON body. Public calls use `PokerlostRequest`; protected
+calls use `PokerlostAuthorizedRequest` with the token only in `authorization.access_token`.
 
-The SDK source defines transport, shared authorization contracts, generic request headers, and the
-canonical explicit per-call retry policy. A consuming service owns credentials and token
-orchestration behind application ports and adapters. The pristine service creates no target
-client, credentials, token storage, or retry settings; extension guidance lives in
-`docs/architecture/inter-service-clients.md`.
+The service includes an empty exact-scope catalog and a local-verifier port, but no fake verifier,
+outbound client, credential, token store, or retry configuration because no current route needs
+them. See
+`docs/api/body-authorization.md` and `docs/architecture/inter-service-clients.md`.
 
 ## Development and deployment
 
-Run `make help` for the thin local tool interface. The regular quality entry points are:
+Run `make help` for the local tool interface. Regular quality entry points are:
 
 ```bash
 make check
 make pre-commit
 ```
 
-See `docs/development/commands.md` and `docs/development/containers-and-kubernetes.md` for Docker
-and Helm workflows.
+Production access requires HTTPS/TLS. The generated Helm ClusterIP is an internal target and must
+remain behind trusted TLS termination.

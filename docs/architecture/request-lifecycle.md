@@ -1,91 +1,48 @@
 # Request lifecycle
 
-This page traces startup, request context, dependency resolution, application execution, and safe
-response handling in the generated service.
+This page traces composition, server-owned request context, authorization, application execution,
+and response handling.
 
-## Composition and lifespan
+## Composition
 
-`create_app()` resolves `Settings`, configures observability, constructs the FastAPI application,
-and registers request-context middleware, exception handlers, routes, and instrumentation. It
-disables the built-in OpenAPI and documentation URLs.
+`create_app()` resolves settings, configures observability, constructs FastAPI, and registers
+request middleware, exception handlers, flat routers, and instrumentation. Lifespan creates the
+database engine/session factory and stores them with the optional `PokerlostTokenVerifier` in
+`ApplicationResources`. The same lifespan creates the configured `Argon2PasswordService` once and
+publishes it as a process-owned resource.
 
-Application lifespan creates the async SQLAlchemy engine, session factory, and configured password
-service. It instruments the engine when configured and stores these process-owned components in
-immutable `ApplicationResources`. Settings and resources are attached to application state for
-dependencies. Shutdown removes that state and disposes the engine.
+The current service supplies no verifier because it has no protected route. A real local verifier
+is passed only when such a route is implemented. Missing protected composition fails closed.
 
-There is currently no authService call site, so lifespan does not create an authService client or
-token port or adapter, and `ApplicationResources` has no placeholder client field. When an
-implemented operation adds that target, lifespan constructs and starts one target-specific
-`pypokerlost.Client` before publishing resources, stores it in an explicitly named typed field,
-reuses it across requests, and stops it in reverse ownership order. Partial startup failure unwinds
-resources that already started. Credentials, requested scopes, audience, and any token storage or
-refresh remain accountsService-owned and are added only for the implemented use case.
-
-Creating the engine does not itself prove a PostgreSQL connection. A route opens a request session
-only when it declares the database dependency; the pristine root and OpenAPI routes do not.
-
-## Request flow
-
-The intended flow for a database-backed service operation is:
+## Inbound flow
 
 ```text
-create_app
--> lifespan
--> ApplicationResources
--> request middleware
--> dependency aliases
--> route
--> application handler
--> repository or query adapter
--> response
+FastAPI
+→ server-generated request ID
+→ dependencies
+→ flat route
+→ application handler
+→ persistence adapter
+→ PokerlostResponse
 ```
 
-1. Middleware generates a new `X-Request-ID` for every request. It accepts a supplied
-   `X-Correlation-ID` only when it matches the bounded safe format; otherwise it generates one.
-   Both identifiers enter Logfire baggage and are returned as response headers.
-2. Private resolver functions expose settings and lifespan-owned resources through public PEP 695
-   dependency aliases. A route that needs PostgreSQL declares `DatabaseSession`, which opens one
-   request-owned session and transaction.
-3. The route validates its typed API request and converts it into a command or query. It invokes an
-   asynchronous application handler rather than placing business orchestration in FastAPI code.
-4. The handler coordinates repositories or read-query adapters. Adapters execute SQLAlchemy
-   statements through the injected request session and let exceptions propagate to the API
-   boundary.
-5. The route converts the application result into a typed API response and returns the
-   `ApplicationResponse` envelope documented in `docs/api/application-response.md`. FastAPI
-   validates and serializes the declared response model.
+The request ID is generated server-side and exists only in request state and telemetry. No caller
+correlation value is accepted or returned as a transport contract.
 
-When an application workflow makes an outbound call, it depends on a service-owned application
-port whose adapter resolves the named lifespan-owned client. Token orchestration remains in that
-service, while transport retry is enabled only by
-`RequestOptions(retry=PokerLostRetryPolicy())`. A request-owned database transaction must end
-before token acquisition, the remote call, or backoff. See
-`docs/architecture/inter-service-clients.md` for the complete pattern.
+A public route receives `PokerlostRequest[Payload]`. A protected route receives
+`PokerlostAuthorizedRequest[Payload]` and declares exact scopes through `Security`. The dependency
+validates the cached JSON authorization object, invokes the local verifier for the service
+audience, and checks every scope before the route executes.
 
-The two pristine endpoints stop at the route: they have no application handler, repository, query
-adapter, or database dependency.
+Routes translate payloads into application commands/queries and translate results into typed
+`PokerlostResponse` values. Central handlers normalize validation, application, database,
+authentication, authorization, and unexpected failures without exposing submitted input.
 
-## Future outbound call phase
+## Transactions and outbound calls
 
-An application flow that adopts authService must leave its request-owned PostgreSQL transaction
-before service-owned token acquisition, the SDK call, or any retry sleep. It uses a service-owned
-application port and pypokerlost adapter with the generated method and lifespan-owned typed client.
-Retry remains disabled unless that exact call passes
-`RequestOptions(retry=PokerLostRetryPolicy())`; `401` and `403` are never automatically replayed.
+A route that declares `DatabaseSession` owns one async transaction. It must end before token
+acquisition, outbound SDK calls, retry sleep, or subsequent attempts. Outbound clients use retry
+then authorization middleware as documented in `docs/architecture/inter-service-clients.md`.
 
-For a replay-safe mutation, every attempt carries the same `business_operation_id` and semantic
-payload. A later short transaction records the remote result or reconciliation state. The current
-repository has persistence foundations for resumable workflows but no implemented outbound
-orchestration, so this phased flow is a requirement rather than current request behavior.
-
-## Safe error path
-
-Registered handlers convert validation, application, HTTP, and SQLAlchemy failures into the
-documented safe envelopes. If another exception escapes, request middleware records it with the
-request and correlation identifiers and returns the generic internal failure. The response still
-receives both context headers, while tracebacks and secrets stay out of the public body. See
-`docs/api/errors.md` for the exact mappings.
-
-Transaction completion and database error ownership are defined in
-`docs/architecture/persistence-and-transactions.md`.
+The root and OpenAPI routes stop at the route layer and open no database transaction. The existing
+account/password repositories and workflow state are not reached by an HTTP route yet.

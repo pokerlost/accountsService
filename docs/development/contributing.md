@@ -6,7 +6,8 @@ This page defines the focused change and review workflow for `accountsService`.
 
 Read the repository `AGENTS.md` and service-owned `SERVICE.md`, then inspect the current
 implementation and the canonical documentation for the area being changed. `SERVICE.md` defines
-concrete responsibilities; the pristine scaffold must not gain unrelated business behavior.
+concrete responsibilities; the existing account/password foundation must not gain unrelated
+business behavior.
 
 Use the template and `pypokerlost` primitives that already own a concern. Do not introduce an alternative HTTP transport, transaction manager, configuration framework, dependency-injection system, or deployment workflow when an established primitive satisfies the requirement.
 

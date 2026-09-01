@@ -6,7 +6,7 @@ SERVICE_SLUG: accountsservice
 ## Purpose
 
 Own human accounts, canonical usernames, nicknames, password credentials
-and human login confirmation for PokerLost.
+and human login confirmation for Pokerlost.
 
 accountsService is a game-agnostic platform service. It does not own games,
 events, tournaments, bets, balances or blockchain business logic.
@@ -39,7 +39,7 @@ events, tournaments, bets, balances or blockchain business logic.
 - Access and refresh tokens are issued only by authService.
 - Passwords and password hashes never enter authService.
 - JWT access tokens are validated locally using authService public keys.
-- PokerLost inter-service calls use generated pypokerlost methods.
+- Pokerlost inter-service calls use generated pypokerlost methods.
 - Direct HTTP clients and direct access to another service database are forbidden.
 - PostgreSQL transactions must never span SDK network calls.
 - Passwords, password hashes, tokens and login grants must not enter logs.

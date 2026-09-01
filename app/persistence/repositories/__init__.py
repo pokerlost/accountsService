@@ -10,7 +10,7 @@ from .account_repository import AccountRepository
 from .account_synchronization_operation_repository import (
     AccountSynchronizationOperationRepository,
 )
-from .base import SQLAlchemyEntityRepository, SQLAlchemyRepository
+from .base import SQLAlchemyRepository
 from .business_operation_repository import (
     BusinessOperationConflictError,
     BusinessOperationRegistrationResult,
@@ -27,6 +27,5 @@ __all__ = (
     "BusinessOperationRepository",
     "PasswordCredentialRepository",
     "ProvisioningRemoteResultConflictError",
-    "SQLAlchemyEntityRepository",
     "SQLAlchemyRepository",
 )

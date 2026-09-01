@@ -1,7 +1,7 @@
 # accountsService documentation
 
-This documentation describes the accountsService foundation, its verified development workflows,
-and the current boundary for adopting generated PokerLost inter-service clients.
+This documentation describes the `accountsService` account/password foundation, its verified
+development workflows, and its current body-only Pokerlost HTTP boundary.
 
 ## Getting started
 
@@ -13,9 +13,10 @@ and the current boundary for adopting generated PokerLost inter-service clients.
 
 - `docs/api/overview.md` — API overview.
 - `docs/api/operation-contract.md` — operation contract.
-- `docs/api/application-response.md` — application response.
+- `docs/api/pokerlost-response.md` — canonical response envelope.
+- `docs/api/body-authorization.md` — body authentication and exact scopes.
 - `docs/api/errors.md` — errors.
-- `docs/api/openapi-and-sdk.md` — OpenAPI publication and generated inter-service SDK consumption.
+- `docs/api/openapi-and-sdk.md` — OpenAPI and SDK.
 - `docs/api/public-surface.md` — public surface.
 
 ## Architecture
