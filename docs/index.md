@@ -1,7 +1,7 @@
 # accountsService documentation
 
 This documentation describes the `accountsService` account/password foundation, its verified
-development workflows, and its current body-only Pokerlost HTTP boundary.
+development workflows, and its current header-authorized Pokerlost HTTP boundary.
 
 ## Getting started
 
@@ -14,7 +14,7 @@ development workflows, and its current body-only Pokerlost HTTP boundary.
 - `docs/api/overview.md` — API overview.
 - `docs/api/operation-contract.md` — operation contract.
 - `docs/api/pokerlost-response.md` — canonical response envelope.
-- `docs/api/body-authorization.md` — body authentication and exact scopes.
+- `docs/api/header-authorization.md` — bearer authentication and exact scopes.
 - `docs/api/errors.md` — errors.
 - `docs/api/openapi-and-sdk.md` — OpenAPI and SDK.
 - `docs/api/public-surface.md` — public surface.

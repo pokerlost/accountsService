@@ -41,10 +41,6 @@ class AccountModel(TimestampMixin, UUIDModel):
             name="ck_accounts_status",
         ),
         CheckConstraint(
-            "role_snapshot IS NULL OR role_snapshot IN ('user', 'support', 'master')",
-            name="ck_accounts_role_snapshot",
-        ),
-        CheckConstraint(
             "status = 'pending' OR auth_principal_id IS NOT NULL",
             name="ck_accounts_status_auth_principal",
         ),
@@ -57,4 +53,3 @@ class AccountModel(TimestampMixin, UUIDModel):
     username: Mapped[str] = mapped_column(String(32), nullable=False)
     nickname: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
-    role_snapshot: Mapped[str | None] = mapped_column(String(16), nullable=True)

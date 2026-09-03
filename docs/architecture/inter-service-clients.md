@@ -1,45 +1,71 @@
 # Inter-service clients
 
-This page defines the extension pattern for a concrete `accountsService` service with a real
-outbound Pokerlost dependency declared by `SERVICE.md`. The pristine service creates no client,
-credentials, token store, or retry configuration.
+This page defines the opt-in extension boundary for a future concrete outbound Pokerlost
+dependency.
+
+The current HTTP surface calls no other service. It therefore creates no client, credentials,
+token persistence, refresher or retry configuration.
 
 ## Ownership
 
-The SDK owns transport, generated methods/types, canonical errors, authorization middleware, retry
-middleware, token coordination, and JSON envelope serialization. The consuming service owns target
-configuration, client credentials, audience, a `PokerlostTokenStore` implementation, and business
-replay policy.
+The SDK owns typed methods/types, `PokerlostClient`, transport, response decoding, canonical
+errors, retry middleware, bearer injection and the narrow reactive refresh trigger. The consuming
+service owns target configuration, client credentials, initial `GetToken` orchestration, persistent
+encrypted token state, refresh coordination and business replay policy.
 
-Create one target-specific `PokerlostClient` in lifespan, publish it through one named
-`ApplicationResources` field, reuse it, and close it on shutdown. Do not instantiate an authService
-client in a service without a real dependency. Do not create direct HTTP, a string-keyed registry,
-or a per-request client.
+When an implemented use case needs authService, create one target-specific `PokerlostClient` in
+lifespan, expose it through one named `ApplicationResources` field, reuse it and close it on
+shutdown. Do not create direct HTTP transport, a string-keyed client registry or per-request
+clients.
 
-## Middleware composition
+## Authentication boundary
 
-Protected target calls compose:
+A protected client composes:
 
 ```text
 PokerlostRetryMiddleware
-→ PokerlostAuthorizationMiddleware
+→ PokerlostAuthenticationMiddleware
 → transport
 ```
 
-The authorization middleware receives a dedicated auth-target client without authorization
-middleware, generated `GetToken` and `RefreshToken` methods, exact client credentials, target
-audience, refresh skew, clock, and token store. This avoids recursive token acquisition.
+`PokerlostAuthenticationMiddleware` receives only an injected `PokerlostTokenStore`, an injected
+`PokerlostTokenRefresher`, client identity and target audience. It does not receive or persist
+client credentials and never calls `GetToken` when state is missing.
 
-Before a protected call it reads the method's exact `required_scopes`, loads state by audience and
-canonical scope set, reuses a sufficiently fresh token, or performs a single-flight refresh or
-acquisition. It creates an immutable `PokerlostAuthorizedRequest` with only
-`authorization.access_token`. Public calls bypass the token store and emit `PokerlostRequest`.
+Initial acquisition is explicit service orchestration:
 
-`getToken` sends `client_id`, `client_secret`, exact scopes, and audience in its JSON payload.
-`refreshToken` sends `refresh_token`, optional scopes, and audience in its JSON payload. Token
-operations are public at transport level and use the dedicated auth-target client.
+```text
+service-owned credentials
+→ generated GetToken call
+→ validate PokerlostResponse
+→ persist shared encrypted token state
+→ enable protected target calls
+```
 
-## Retry
+For `method.__scopes__ is None`, middleware bypasses token storage and sends no Authorization
+header. A non-empty tuple loads state by client identity, exact service-name audience and canonical
+scope set. Missing metadata, an empty tuple or missing state fails locally before target I/O. Only
+the transport renders `Authorization: Bearer <access-token>`; every JSON body remains a pure
+`PokerlostRequest`.
+
+## Reactive refresh
+
+Timezone-aware UTC `expires_at` remains persistent coordination metadata and does not trigger a
+refresh before the first target attempt. Only a target response with
+`POKERLOST_ACCESS_TOKEN_EXPIRED` invokes the injected refresher at most once, rebuilds authorization
+state and replays the identical operation, body and `business_operation_id` exactly once.
+Invalid-token and insufficient-scope failures do not refresh.
+
+Production state is shared between replicas and versioned for compare-and-swap. A refresher for a
+rotating refresh token uses a bounded cross-process lease, performs network I/O outside a database
+transaction and lets stale workers reload a newer stored version. Persisted expiration never uses
+a process-local monotonic clock.
+
+No approved reversible token-encryption adapter currently exists in this repository. The first
+outbound protected workflow must provide one before composition; plaintext token storage and a
+process-local substitute are not acceptable interim implementations.
+
+## Retry and business safety
 
 Retry is explicit per logical call:
 
@@ -52,27 +78,16 @@ options = PokerlostRequestOptions(
 )
 ```
 
-The immutable policy uses at most three attempts including the first, full jitter, and a
+The immutable policy uses at most three attempts including the first, full jitter and a
 five-second logical budget. It retries canonical connection/timeout failures and statuses `408`,
-`425`, `429`, `500`, `502`, `503`, and `504`. Server delay comes only from body `retry_after` and
-must fit the remaining budget. Cancellation and protocol/decode errors propagate; exhaustion
-re-raises the last canonical error.
+`425`, `429`, `500`, `502`, `503` and `504`. Server delay comes only from body `retry_after`.
+Cancellation propagates immediately.
 
-A `401` authentication failure invalidates matching state but does not replay the current call. A
-`403` insufficient-scope failure does not refresh or retry. The next independent protected call may
-acquire a new token.
+Transport retry is not business idempotency. Every replay-safe mutation needs the same
+`business_operation_id`, semantic payload, operation and target. The current generic business
+operation repository compares only operation type on key reuse; a later implementing handler must
+also compare its persisted subtype fields before replay. Middleware never creates business IDs or
+owns workflow persistence.
 
-## Business boundaries
-
-Transport retry is not business idempotency. A replay-safe mutation reuses the same business
-operation ID, semantic payload, generated operation, and target. Middleware never creates or
-changes those values and does not own workflow persistence or reconciliation.
-
-Never keep a PostgreSQL transaction open during token acquisition, a target call, retry sleep, or
-another attempt. Persist short local phases at explicit workflow boundaries.
-
-## Privacy
-
-Never log client secrets, passwords, private keys, access or refresh tokens, login grants, or raw
-request/response bodies. Secret-bearing SDK models hide representations and validation input;
-canonical exceptions retain only safe scalar metadata.
+Never keep a PostgreSQL transaction open during acquisition, refresh, a target attempt or retry
+backoff. Secrets and raw request/response bodies do not enter representations, errors or telemetry.

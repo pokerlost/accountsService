@@ -23,12 +23,12 @@ Their exact composition is documented in `docs/development/commands.md`.
 - Docker build and an explicit runtime `GET /` smoke check packaging and process startup when that environment-dependent workflow is run.
 - `helm lint` and `helm template` check chart structure and rendered Kubernetes resources.
 - The authoritative OpenAPI generator and installed-SDK end-to-end probe check `pypokerlost` compatibility when an API wire contract changes.
-- When a concrete outbound integration changes, run an ephemeral probe for final public SDK
-  imports, target settings, lifespan start/stop, body authorization injection, explicit safe
-  retry, one-attempt default behavior, and the absence of a database transaction around remote
-  I/O. Do not claim or retain that probe as a pristine test suite.
-- Protected-route probes cover missing/malformed body authentication, invalid token/audience,
-  missing exact scope, exact-scope success, and absence of secrets from logs/errors.
+- When a concrete outbound integration changes, use a disposable probe unless the direct task
+  explicitly requests permanent tests. Inspect final public SDK imports, target settings, lifespan
+  start/stop, header injection, explicit safe retry and the absence of a database transaction
+  around remote I/O.
+- Protected-route probes cover missing/malformed bearer authentication, invalid/expired token,
+  missing exact scope, exact-scope success, handler exclusion and canonical envelopes.
 
 Docker, Helm, PostgreSQL, and SDK/OpenAPI workflows remain explicit because they can require local
 daemons, credentials, network access, or external checkouts. See
@@ -39,4 +39,7 @@ daemons, credentials, network access, or external checkouts. See
 
 These checks detect specific formatting, typing, syntax, documentation, metadata, packaging, rendering, and compatibility failures. They are not proof of business correctness, production readiness, or security.
 
-The pristine template does not claim unit or integration tests, coverage, a security audit, performance measurements, or CI/CD. Do not add or publish such claims unless the corresponding maintained workflow exists and its current result was actually verified.
+The generated repository does not include a permanent test suite unless one is explicitly
+requested. It does not claim coverage, a security audit, performance guarantees or CI/CD. Do not
+add or publish such claims unless the corresponding maintained workflow exists and its current
+result was actually verified.

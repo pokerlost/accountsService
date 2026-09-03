@@ -9,4 +9,4 @@ class SynchronizationMutationType(StrEnum):
     """Supported remote synchronization mutations."""
 
     SET_STATUS = "set_status"
-    ASSIGN_ROLE = "assign_role"
+    REPLACE_SCOPES = "replace_scopes"

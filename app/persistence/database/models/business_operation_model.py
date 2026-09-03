@@ -29,7 +29,7 @@ class BusinessOperationModel(TimestampMixin, Base):
     __table_args__ = (
         PrimaryKeyConstraint(name="pk_business_operations"),
         CheckConstraint(
-            "operation_type IN ('register', 'create_staff', 'disable', 'enable', 'assign_role')",
+            "operation_type IN ('register', 'create_staff', 'disable', 'enable', 'replace_scopes')",
             name="ck_business_operations_operation_type",
         ),
         CheckConstraint(

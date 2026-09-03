@@ -20,21 +20,17 @@ events, tournaments, bets, balances or blockchain business logic.
 - Perform dummy password verification for unknown accounts.
 - Confirm human credentials and request one-time login grants from authService.
 - Orchestrate human principal provisioning in authService.
-- Orchestrate principal status and role synchronization.
+- Orchestrate principal status and exact-scope synchronization.
 - Maintain the account_id to auth_principal_id binding.
-- Provide self-service, support-safe and master account-management operations.
+- Provide self-service, staff provisioning and account-lifecycle operations.
 - Maintain resumable and idempotent distributed account workflows.
 
 ## Service-specific rules
 
-- Canonical access categories are public, user, support, master and auto.
-- Public means unauthenticated access and is not a persisted role.
-- Human accounts may have only user, support or master roles.
-- Auto is reserved for service principals and never has a HumanAccount or password.
-- Roles have no implicit inheritance.
-- Master is not a global authorization bypass.
-- Protected operations authorize through exact Pokerlost scopes, never through role checks.
-- authService is authoritative for roles, scope grants, sessions and tokens.
+- Public means that an operation has no access-token scope requirement.
+- Protected operations authorize only through exact Pokerlost capability scopes.
+- Human and service identity are distinguished by `PrincipalType`, not by access categories.
+- authService is authoritative for direct principal/client scope grants, sessions and tokens.
 - accountsService is authoritative for usernames, nicknames and password credentials.
 - Access and refresh tokens are issued only by authService.
 - Passwords and password hashes never enter authService.
@@ -52,23 +48,57 @@ client, target settings, client credentials, requested scope bundle, or Kubernet
 
 When a concrete operation introduces that dependency:
 
-- create one target-specific `PokerlostClient` and one dedicated authorization-target
-  `PokerlostClient` without authorization middleware in FastAPI lifespan, store them in explicitly
-  typed `ApplicationResources` fields, reuse them across requests, and close them on shutdown;
-- configure one `PokerlostAuthorizationMiddleware` with client credentials, the logical target
-  audience, and an application-selected `PokerlostTokenStore` implementation;
-- let each generated method supply its exact `required_scopes`; never request a wildcard or a
+- create one target-specific `PokerlostClient` in FastAPI lifespan, store it in an explicitly typed
+  `ApplicationResources` field, reuse it across requests, and close it on shutdown;
+- configure `PokerlostAuthenticationMiddleware` only with an injected shared
+  `PokerlostTokenStore`, `PokerlostTokenRefresher`, client identity and exact target audience;
+- let each generated method supply its exact `__scopes__`; never request a wildcard or a
   service-wide scope bundle;
-- send credentials, refresh tokens, and access tokens only in the canonical JSON request bodies;
+- acquire the initial token explicitly through generated `GetToken` orchestration, then persist the
+  encrypted token state before protected calls begin;
+- let the SDK transport alone translate its typed internal token field into
+  `Authorization: Bearer`; service code never constructs headers;
+- allow one reactive refresh and one replay only for the exact canonical expired-token error;
+- coordinate rotating refresh tokens across replicas with persistent version/CAS state and a
+  bounded lease that does not hold a PostgreSQL transaction during network I/O;
 - keep retry disabled unless a semantically safe call passes
   `PokerlostRequestOptions(retry_policy=PokerlostRetryPolicy())`;
 - retry a mutation only with the same `business_operation_id` and the same semantic payload, backed
   by the target operation's persisted idempotency contract;
-- never replay `401` or `403` automatically, and never hold a request-owned PostgreSQL transaction
-  across token acquisition, the remote call, or retry backoff;
+- never refresh on invalid-token or insufficient-scope failures, and never hold a request-owned
+  PostgreSQL transaction across token acquisition, refresh, the remote call, or retry backoff;
 - keep client credentials, access tokens, refresh tokens, and sensitive payloads out of source,
-  ConfigMaps, errors, representations, telemetry, and logs; OpenAPI describes only the body schema
-  and never exposes concrete secret values.
+  ConfigMaps, errors, representations, telemetry, and logs; OpenAPI publishes the standard security
+  contract but never concrete secret values.
+
+No approved reversible token-encryption adapter currently exists in this repository. Its concrete
+implementation is therefore a blocker for the first outbound protected workflow, not a reason to
+add plaintext storage or a process-local substitute now.
+
+### Capability scopes
+
+The service-owned catalog contains:
+
+```text
+accounts.self.getMe
+accounts.self.updateNickname
+accounts.account.read
+accounts.staff.create
+accounts.account.disable
+accounts.account.enable
+accounts.account.replaceScopes
+```
+
+No current HTTP operation consumes these capabilities because no account business route is
+implemented yet.
+
+### Business-operation reuse
+
+`BusinessOperationRepository.register_or_load()` currently proves only that a reused
+`business_operation_id` has the same operation type. Provisioning and synchronization tables keep
+their semantic account/status/scope fields, but no current application handler compares those
+fields on reuse. The first implementing business stage must perform that comparison before replay;
+the generic repository and transport retry do not claim semantic payload equivalence.
 
 ### Nickname policy
 

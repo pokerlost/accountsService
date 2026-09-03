@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pypokerlost.types import AuthorizationRole, PrincipalStatus
+from pypokerlost.enums import PrincipalStatus
 from sqlalchemy import and_, insert, or_, select, update
 
 from domain.business_operations import AccountProvisioningOperation
+from domain.enums import Scopes
 from persistence.database.models import AccountProvisioningOperationModel
 
 from .base import SQLAlchemyRepository
@@ -25,7 +26,7 @@ def _to_domain(model: AccountProvisioningOperationModel) -> AccountProvisioningO
     return AccountProvisioningOperation.hydrate(
         business_operation_id=model.business_operation_id,
         account_id=model.account_id,
-        requested_role=AuthorizationRole(model.requested_role),
+        initial_scopes=tuple(Scopes(scope) for scope in model.initial_scopes),
         remote_principal_id=model.remote_principal_id,
         remote_principal_status=(
             PrincipalStatus(model.remote_principal_status)
@@ -50,7 +51,7 @@ class AccountProvisioningOperationRepository(SQLAlchemyRepository):
             .values(
                 business_operation_id=operation.business_operation_id,
                 account_id=operation.account_id,
-                requested_role=operation.requested_role.value,
+                initial_scopes=[scope.value for scope in operation.initial_scopes],
                 remote_principal_id=operation.remote_principal_id,
                 remote_principal_status=(
                     operation.remote_principal_status.value

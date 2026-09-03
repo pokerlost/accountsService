@@ -51,6 +51,13 @@ uses the same `business_operation_id` and the same semantic payload. The SDK nei
 key nor persists workflow, outbox, or reconciliation state. Detailed client and retry
 composition is documented in `docs/architecture/inter-service-clients.md`.
 
+The current `BusinessOperationRepository.register_or_load()` compares only the persisted operation
+type when a key already exists. Provisioning and synchronization rows persist their account,
+status and exact-scope semantics, but no implemented handler currently compares those subtype
+fields on reuse. The first business stage using them must make that comparison before replay. This
+known operation-level gap is not evidence of semantic payload safety and does not justify restoring
+a platform-wide request fingerprint.
+
 ## Failure mapping
 
 The engine boundary narrowly converts an exact driver `ConnectionRefusedError` into SQLAlchemy's

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKey, PrimaryKeyConstraint, String
+from sqlalchemy import ARRAY, CheckConstraint, ForeignKey, PrimaryKeyConstraint, String
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,13 +13,13 @@ from persistence.database.mixins import TimestampMixin
 
 
 class AccountSynchronizationOperationModel(TimestampMixin, Base):
-    """Persist one requested status or role mutation for reconciliation."""
+    """Persist one requested status or exact-scope mutation for reconciliation."""
 
     __tablename__ = "account_synchronization_operations"
     __table_args__ = (
         PrimaryKeyConstraint(name="pk_account_synchronization_operations"),
         CheckConstraint(
-            "mutation_type IN ('set_status', 'assign_role')",
+            "mutation_type IN ('set_status', 'replace_scopes')",
             name="ck_account_synchronization_operations_mutation_type",
         ),
         CheckConstraint(
@@ -27,16 +27,13 @@ class AccountSynchronizationOperationModel(TimestampMixin, Base):
             name="ck_account_synchronization_operations_desired_status",
         ),
         CheckConstraint(
-            "desired_role IS NULL OR desired_role IN ('user', 'support', 'master')",
-            name="ck_account_synchronization_operations_desired_role",
-        ),
-        CheckConstraint(
             "(mutation_type = 'set_status' "
             "AND desired_status IS NOT NULL "
-            "AND desired_role IS NULL) "
-            "OR (mutation_type = 'assign_role' "
+            "AND desired_scopes IS NULL) "
+            "OR (mutation_type = 'replace_scopes' "
             "AND desired_status IS NULL "
-            "AND desired_role IS NOT NULL)",
+            "AND desired_scopes IS NOT NULL "
+            "AND array_position(desired_scopes, NULL) IS NULL)",
             name="ck_account_synchronization_operations_mutation_shape",
         ),
     )
@@ -59,4 +56,4 @@ class AccountSynchronizationOperationModel(TimestampMixin, Base):
     )
     mutation_type: Mapped[str] = mapped_column(String(16), nullable=False)
     desired_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    desired_role: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    desired_scopes: Mapped[list[str] | None] = mapped_column(ARRAY(String()), nullable=True)

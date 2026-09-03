@@ -33,10 +33,15 @@ PYTHONPATH=app uv run --locked alembic check
 
 `alembic/env.py` uses the shared `Base.metadata`. Import every concrete `*Model` through `persistence.database.models` so its table is registered before Alembic compares metadata. Keep model imports in that registration facade rather than adding migration-only imports.
 
-This service contains account, password-credential, and resumable-workflow tables. Add or change a
-model and migration only for a responsibility defined in `SERVICE.md`; never edit an already
-applied revision to represent a later schema change. Use a forward migration for every later
-schema transition.
+This service contains account, password-credential and resumable-workflow tables. Revision
+`20260903_0003` removes obsolete authorization classifications and changes planned remote workflow
+intent to exact scope arrays. It preserves status-only synchronization rows and rejects an upgrade
+when provisioning or classification-mutation rows cannot be translated without guessing
+authService-owned grants. Operators must resolve those rows before retrying the migration.
+
+Add or change a model and migration only for a responsibility defined in `SERVICE.md`; never edit
+an already applied revision to represent a later schema change. Use a forward migration for every
+later schema transition.
 
 For transaction behavior at runtime, see
 `docs/architecture/persistence-and-transactions.md`.

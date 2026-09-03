@@ -6,6 +6,7 @@ from .account_status import AccountStatus
 from .business_operation_state import BusinessOperationState
 from .business_operation_type import BusinessOperationType
 from .environment import Environment
+from .scopes import Scopes
 from .synchronization_mutation_type import SynchronizationMutationType
 
 __all__ = (
@@ -13,5 +14,6 @@ __all__ = (
     "BusinessOperationState",
     "BusinessOperationType",
     "Environment",
+    "Scopes",
     "SynchronizationMutationType",
 )

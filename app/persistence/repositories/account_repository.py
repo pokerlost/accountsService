@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pypokerlost.types import AuthorizationRole
 from sqlalchemy import insert, select, update
 
 from domain.accounts import Account, CanonicalUsername, Nickname
@@ -27,9 +26,6 @@ def _to_domain(model: AccountModel) -> Account:
         username=CanonicalUsername(model.username),
         nickname=Nickname(model.nickname),
         status=AccountStatus(model.status),
-        role_snapshot=(
-            AuthorizationRole(model.role_snapshot) if model.role_snapshot is not None else None
-        ),
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
@@ -48,9 +44,6 @@ class AccountRepository(SQLAlchemyRepository):
                 username=account.username.value,
                 nickname=account.nickname.value,
                 status=account.status.value,
-                role_snapshot=(
-                    account.role_snapshot.value if account.role_snapshot is not None else None
-                ),
                 created_at=account.created_at,
                 updated_at=account.updated_at,
             )
@@ -142,22 +135,6 @@ class AccountRepository(SQLAlchemyRepository):
             )
             .values(
                 status=account.status.value,
-                updated_at=account.updated_at,
-            )
-            .returning(AccountModel),
-        )
-        model = result.one_or_none()
-        return _to_domain(model) if model is not None else None
-
-    async def update_role_snapshot(self, account: Account) -> Account | None:
-        """Persist the non-authoritative role snapshot for reconciliation."""
-        result = await self._read_scalar(
-            update(AccountModel)
-            .where(AccountModel.id == account.id)
-            .values(
-                role_snapshot=(
-                    account.role_snapshot.value if account.role_snapshot is not None else None
-                ),
                 updated_at=account.updated_at,
             )
             .returning(AccountModel),

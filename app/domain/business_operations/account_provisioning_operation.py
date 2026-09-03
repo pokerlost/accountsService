@@ -7,10 +7,11 @@ from datetime import datetime
 from typing import Self
 from uuid import UUID
 
-from pypokerlost.types import AuthorizationRole, PrincipalStatus
+from pypokerlost.enums import PrincipalStatus
 
+from domain.enums import Scopes
 from domain.errors import DomainConflictError, DomainValidationError
-from domain.human_role_policy import validate_human_authorization_role
+from domain.principal_scopes import canonicalize_principal_scopes
 
 
 def _validate_timestamp(value: datetime, *, name: str) -> None:
@@ -25,7 +26,7 @@ class AccountProvisioningOperation:
 
     _business_operation_id: UUID
     _account_id: UUID
-    _requested_role: AuthorizationRole
+    _initial_scopes: tuple[Scopes, ...]
     _remote_principal_id: UUID | None
     _remote_principal_status: PrincipalStatus | None
     _created_at: datetime
@@ -43,14 +44,14 @@ class AccountProvisioningOperation:
         *,
         business_operation_id: UUID,
         account_id: UUID,
-        requested_role: AuthorizationRole,
+        initial_scopes: tuple[Scopes, ...],
         created_at: datetime,
     ) -> Self:
         """Create a provisioning workflow before any remote result exists."""
         return cls._build(
             business_operation_id=business_operation_id,
             account_id=account_id,
-            requested_role=requested_role,
+            initial_scopes=initial_scopes,
             remote_principal_id=None,
             remote_principal_status=None,
             created_at=created_at,
@@ -63,7 +64,7 @@ class AccountProvisioningOperation:
         *,
         business_operation_id: UUID,
         account_id: UUID,
-        requested_role: AuthorizationRole,
+        initial_scopes: tuple[Scopes, ...],
         remote_principal_id: UUID | None,
         remote_principal_status: PrincipalStatus | None,
         created_at: datetime,
@@ -73,7 +74,7 @@ class AccountProvisioningOperation:
         return cls._build(
             business_operation_id=business_operation_id,
             account_id=account_id,
-            requested_role=requested_role,
+            initial_scopes=initial_scopes,
             remote_principal_id=remote_principal_id,
             remote_principal_status=remote_principal_status,
             created_at=created_at,
@@ -86,7 +87,7 @@ class AccountProvisioningOperation:
         *,
         business_operation_id: UUID,
         account_id: UUID,
-        requested_role: AuthorizationRole,
+        initial_scopes: tuple[Scopes, ...],
         remote_principal_id: UUID | None,
         remote_principal_status: PrincipalStatus | None,
         created_at: datetime,
@@ -96,9 +97,9 @@ class AccountProvisioningOperation:
             raise DomainValidationError("Business operation id must be a UUID.")
         if not isinstance(account_id, UUID):
             raise DomainValidationError("Provisioning account id must be a UUID.")
-        validate_human_authorization_role(
-            requested_role,
-            field_name="Requested human role",
+        canonical_scopes = canonicalize_principal_scopes(
+            initial_scopes,
+            field_name="Initial principal scopes",
         )
         if remote_principal_id is not None and not isinstance(remote_principal_id, UUID):
             raise DomainValidationError("Remote principal id must be a UUID when set.")
@@ -114,7 +115,7 @@ class AccountProvisioningOperation:
         operation = object.__new__(cls)
         operation._business_operation_id = business_operation_id
         operation._account_id = account_id
-        operation._requested_role = requested_role
+        operation._initial_scopes = canonical_scopes
         operation._remote_principal_id = remote_principal_id
         operation._remote_principal_status = remote_principal_status
         operation._created_at = created_at
@@ -132,9 +133,9 @@ class AccountProvisioningOperation:
         return self._account_id
 
     @property
-    def requested_role(self) -> AuthorizationRole:
-        """Return the explicitly requested role without inheritance semantics."""
-        return self._requested_role
+    def initial_scopes(self) -> tuple[Scopes, ...]:
+        """Return the exact initial scope set requested for the principal."""
+        return self._initial_scopes
 
     @property
     def remote_principal_id(self) -> UUID | None:

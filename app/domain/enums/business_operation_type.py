@@ -12,4 +12,4 @@ class BusinessOperationType(StrEnum):
     CREATE_STAFF = "create_staff"
     DISABLE = "disable"
     ENABLE = "enable"
-    ASSIGN_ROLE = "assign_role"
+    REPLACE_SCOPES = "replace_scopes"

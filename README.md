@@ -2,8 +2,8 @@
 
 `accountsService` owns the account and credential domain defined in `SERVICE.md`. The current
 foundation includes account/password models, resumable workflow persistence, a typed Argon2id
-policy, the private Pokerlost body-only JSON protocol, observability, Docker, and Helm. Concrete
-HTTP business operations are added only with their complete application flow.
+policy, the Pokerlost JSON protocol with standard bearer authorization, observability, Docker, and
+Helm. Concrete HTTP business operations are added only with their complete application flow.
 
 Read `docs/index.md` for the complete guide and `AGENTS.md` for normative engineering rules. Python
 3.14 or newer is required.
@@ -33,16 +33,16 @@ make run
 | method | path | operation_id | response |
 | --- | --- | --- | --- |
 | `GET` | `/` | `getRoot` | `PokerlostResponse[None]` |
-| `GET` | `/getOpenApi` | `getOpenApi` | `PokerlostResponse[dict[str, JSONValue]]` |
+| `GET` | `/getOpenApi` | `getOpenApi` | Raw OpenAPI JSON document |
 
 These public infrastructure endpoints accept no body or authentication. Every business operation
-uses `POST /<operationId>` and a typed JSON body. Public calls use `PokerlostRequest`; protected
-calls use `PokerlostAuthorizedRequest` with the token only in `authorization.access_token`.
+uses `POST /<operationId>` and a typed `PokerlostRequest` JSON body. Protected operations accept an
+access token only through `Authorization: Bearer <access-token>`.
 
-The service includes an empty exact-scope catalog and a local-verifier port, but no fake verifier,
+The service owns a capability scope catalog and a local-verifier port, but no fake verifier,
 outbound client, credential, token store, or retry configuration because no current route needs
-them. See
-`docs/api/body-authorization.md` and `docs/architecture/inter-service-clients.md`.
+them. See `docs/api/header-authorization.md` and
+`docs/architecture/inter-service-clients.md`.
 
 ## Development and deployment
 

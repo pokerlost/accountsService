@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pypokerlost.types import AuthorizationRole, PrincipalStatus
+from pypokerlost.enums import PrincipalStatus
 from sqlalchemy import insert, select
 
 from domain.business_operations import AccountSynchronizationOperation
-from domain.enums import SynchronizationMutationType
+from domain.enums import Scopes, SynchronizationMutationType
 from persistence.database.models import AccountSynchronizationOperationModel
 
 from .base import SQLAlchemyRepository
@@ -23,8 +23,10 @@ def _to_domain(model: AccountSynchronizationOperationModel) -> AccountSynchroniz
         desired_status=(
             PrincipalStatus(model.desired_status) if model.desired_status is not None else None
         ),
-        desired_role=(
-            AuthorizationRole(model.desired_role) if model.desired_role is not None else None
+        desired_scopes=(
+            tuple(Scopes(scope) for scope in model.desired_scopes)
+            if model.desired_scopes is not None
+            else None
         ),
         created_at=model.created_at,
         updated_at=model.updated_at,
@@ -32,7 +34,7 @@ def _to_domain(model: AccountSynchronizationOperationModel) -> AccountSynchroniz
 
 
 class AccountSynchronizationOperationRepository(SQLAlchemyRepository):
-    """Persist one exact desired remote status or role mutation."""
+    """Persist one exact desired remote status or scope-set mutation."""
 
     async def add(
         self,
@@ -48,8 +50,10 @@ class AccountSynchronizationOperationRepository(SQLAlchemyRepository):
                 desired_status=(
                     operation.desired_status.value if operation.desired_status is not None else None
                 ),
-                desired_role=(
-                    operation.desired_role.value if operation.desired_role is not None else None
+                desired_scopes=(
+                    [scope.value for scope in operation.desired_scopes]
+                    if operation.desired_scopes is not None
+                    else None
                 ),
                 created_at=operation.created_at,
                 updated_at=operation.updated_at,

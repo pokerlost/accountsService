@@ -23,26 +23,31 @@ FastAPI
 → flat route
 → application handler
 → persistence adapter
-→ PokerlostResponse
+→ plain response data
+→ FastAPI response_model serialization
 ```
 
 The request ID is generated server-side and exists only in request state and telemetry. No caller
 correlation value is accepted or returned as a transport contract.
 
-A public route receives `PokerlostRequest[Payload]`. A protected route receives
-`PokerlostAuthorizedRequest[Payload]` and declares exact scopes through `Security`. The dependency
-validates the cached JSON authorization object, invokes the local verifier for the service
-audience, and checks every scope before the route executes.
+Every business route receives `PokerlostRequest[Payload]`. A protected route additionally declares
+exact scopes through `Security`. The dependency validates the bearer header, invokes the local
+verifier for the exact service-name audience, distinguishes invalid and expired credentials, and
+checks every scope before the route executes.
 
-Routes translate payloads into application commands/queries and translate results into typed
-`PokerlostResponse` values. Central handlers normalize validation, application, database,
-authentication, authorization, and unexpected failures without exposing submitted input.
+Pydantic request models parse primitive wire values before routes translate them into application
+commands or queries. Application handlers return focused results without FastAPI or HTTP response
+types. Routes translate those results into plain mappings, and FastAPI validates normal business
+successes through `response_model`. Central handlers alone construct the canonical error envelope
+and normalize validation, application, database, authentication, authorization and unexpected
+failures without exposing submitted input. `/getOpenApi` returns the raw framework document.
 
 ## Transactions and outbound calls
 
 A route that declares `DatabaseSession` owns one async transaction. It must end before token
-acquisition, outbound SDK calls, retry sleep, or subsequent attempts. Outbound clients use retry
-then authorization middleware as documented in `docs/architecture/inter-service-clients.md`.
+acquisition, refresh, outbound SDK calls, retry sleep, or subsequent attempts. Outbound clients use
+retry then authentication middleware as documented in
+`docs/architecture/inter-service-clients.md`.
 
 The root and OpenAPI routes stop at the route layer and open no database transaction. The existing
 account/password repositories and workflow state are not reached by an HTTP route yet.

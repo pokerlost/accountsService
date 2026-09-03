@@ -13,20 +13,8 @@ For example, `database.url` maps to `ACCOUNTSSERVICE_DATABASE__URL`. Names are
 case-insensitive, but `.env.example` uses uppercase names consistently. Process environment values
 override values from `.env` according to Pydantic Settings behavior.
 
-## Base operations
-
-| Field | Environment variable | Required | Example |
-| --- | --- | --- | --- |
-| `root_operation` | `ACCOUNTSSERVICE_ROOT_OPERATION` | Yes | `getRoot` |
-| `openapi_operation` | `ACCOUNTSSERVICE_OPENAPI_OPERATION` | Yes | `getOpenApi` |
-
-Both fields use `pypokerlost.types.PokerlostOperation`, so invalid startup values fail validation. The
-root operation controls only the operation ID for `GET /`; the HTTP path remains `/`. The OpenAPI
-operation controls both its operation ID and its `"/" + operation_id` path. Business operation IDs
-remain source-defined stable contracts rather than environment settings.
-
-The Helm values `rootOperation` and `openapiOperation` map explicitly to those exact two
-environment variables in the ConfigMap. They are not Kubernetes Secrets.
+The infrastructure operation IDs `getRoot` and `getOpenApi` and their paths are stable code-defined
+API contracts. They are not settings, environment variables, Helm values or ConfigMap entries.
 
 ## `application`
 
@@ -90,13 +78,14 @@ Secret references rather than the chart ConfigMap; see
 
 The current settings model has no authService target group because no implemented operation calls
 authService. Consequently there are no `ACCOUNTSSERVICE_AUTH_SERVICE__*` environment variables,
-client credentials, requested scopes, token storage, or retry settings. Do not preconfigure an
-unused target.
+client credentials, token storage, refresher, or retry settings. Do not preconfigure an unused
+target.
 
 When a concrete operation introduces that dependency, add one focused immutable authService
 settings group and one explicitly named field on root `Settings`. Its base URL and request timeout
-are deployment configuration. Token credentials, storage, refresh, requested exact scopes, and
-audience remain service-owned and are added only when the implemented use case needs them.
+are deployment configuration. Credentials, explicit initial acquisition, encrypted shared storage,
+refresh coordination, exact scopes and audience remain service-owned and are added only when the
+implemented use case needs them.
 
 Do not expose `PokerlostRetryPolicy` values as settings; its transport algorithm is fixed by the
 SDK. Do not automatically add authService configuration to every service. The complete ownership
