@@ -5,10 +5,10 @@ foundation includes account/password models, resumable workflow persistence, a t
 policy, the Pokerlost JSON protocol with standard bearer authorization, observability, Docker, and
 Helm. Concrete HTTP business operations are added only with their complete application flow.
 
-Read `docs/index.md` for the complete guide and `AGENTS.md` for normative engineering rules. Python
+Read the [documentation index](docs/index.md) for the complete guide and `AGENTS.md` for normative engineering rules. Python
 3.14 or newer is required.
 
-## Install
+## 🚀 Install
 
 The mandatory private `pypokerlost` dependency requires GitHub SSH read access:
 
