@@ -8,8 +8,7 @@ and response handling.
 `create_app()` resolves settings, configures observability, constructs FastAPI, and registers
 request middleware, exception handlers, flat routers, and instrumentation. Lifespan creates the
 database engine/session factory and stores them with the optional `PokerlostTokenVerifier` in
-`ApplicationResources`. The same lifespan creates the configured `Argon2PasswordService` once and
-publishes it as a process-owned resource.
+`ApplicationResources`. No password service or account model is composed in this foundation.
 
 The current service supplies no verifier because it has no protected route. A real local verifier
 is passed only when such a route is implemented. Missing protected composition fails closed.
@@ -50,4 +49,5 @@ retry then authentication middleware as documented in
 `docs/architecture/inter-service-clients.md`.
 
 The root and OpenAPI routes stop at the route layer and open no database transaction. The existing
-account/password repositories and workflow state are not reached by an HTTP route yet.
+account/password repositories and workflow runtime code have been removed. Historical migration
+files remain but are not invoked by either infrastructure route.

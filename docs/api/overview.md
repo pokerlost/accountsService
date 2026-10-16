@@ -10,8 +10,8 @@ FastAPI to validate and serialize through their declared `response_model`.
 
 `GET /` and `GET /getOpenApi` are public bodyless infrastructure endpoints. The root uses the
 canonical envelope, while `/getOpenApi` returns the raw generated document. The current service
-contains no business route or concrete token verifier; its account/password domain, capability
-catalog and persistence foundation remain internal until an application flow is implemented.
+contains no business route, concrete token verifier, account/password domain model or capability
+scope. The persistence mechanism has no current ORM entity; historical migrations are retained.
 
 Read `docs/api/operation-contract.md` for operation rules,
 `docs/api/pokerlost-response.md` for the response invariant,

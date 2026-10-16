@@ -1,9 +1,9 @@
 # accountsService
 
-`accountsService` owns the account and credential domain defined in `SERVICE.md`. The current
-foundation includes account/password models, resumable workflow persistence, a typed Argon2id
-policy, the Pokerlost JSON protocol with standard bearer authorization, observability, Docker, and
-Helm. Concrete HTTP business operations are added only with their complete application flow.
+`accountsService` is a Pokerlost service foundation for a proposed human-account owner. It has the
+template's HTTP, configuration, persistence and observability mechanisms, with no account models,
+password implementation or business routes. Planned ownership and the historical migration limit
+are recorded in [SERVICE.md](SERVICE.md).
 
 Read the [documentation index](docs/index.md) for the complete guide and `AGENTS.md` for normative engineering rules. Python
 3.14 or newer is required.
@@ -39,7 +39,7 @@ These public infrastructure endpoints accept no body or authentication. Every bu
 uses `POST /<operationId>` and a typed `PokerlostRequest` JSON body. Protected operations accept an
 access token only through `Authorization: Bearer <access-token>`.
 
-The service owns a capability scope catalog and a local-verifier port, but no fake verifier,
+The service retains an empty scope catalog and a local-verifier port, but no fake verifier,
 outbound client, credential, token store, or retry configuration because no current route needs
 them. See `docs/api/header-authorization.md` and
 `docs/architecture/inter-service-clients.md`.

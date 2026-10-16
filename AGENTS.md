@@ -1,5 +1,9 @@
 # accountsService
 
+The current checkout is a template-derived foundation with only infrastructure routes. Account,
+password, and workflow behavior is planned in `SERVICE.md`; do not reintroduce it as a hidden
+model, route, or migration. Existing Alembic revisions remain historical and must not be rewritten.
+
 Before every task:
 
 1. Read `AGENTS.md` and `SERVICE.md`.

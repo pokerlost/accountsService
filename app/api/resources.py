@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from application.ports import PokerlostTokenVerifier
-from application.security import Argon2PasswordService
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,5 +15,4 @@ class ApplicationResources:
 
     engine: AsyncEngine
     session_factory: async_sessionmaker[AsyncSession]
-    password_service: Argon2PasswordService
     token_verifier: PokerlostTokenVerifier | None

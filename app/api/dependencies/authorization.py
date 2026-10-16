@@ -9,7 +9,10 @@ from fastapi.openapi.models import OAuthFlowClientCredentials, OAuthFlows
 from fastapi.security import OAuth2, SecurityScopes
 from fastapi.security.utils import get_authorization_scheme_param
 from pydantic import SecretStr
-from pypokerlost.types import PokerlostAudience, PokerlostAuthorizationContext
+from pypokerlost.types import (
+    PokerlostAudience,
+    PokerlostAuthorizationContext,
+)
 
 from application.errors import (
     AuthenticationRequiredError,
@@ -17,7 +20,7 @@ from application.errors import (
     InvalidAccessTokenError,
 )
 from application.ports import PokerlostTokenVerifier
-from domain.enums import Scopes
+from domain.enums import Scopes, scope_descriptions
 from service import SERVICE_NAME
 
 from .resources import ApplicationResourcesDep
@@ -35,7 +38,7 @@ _pokerlost_oauth2_scheme = OAuth2(
     flows=OAuthFlows(
         clientCredentials=OAuthFlowClientCredentials(
             tokenUrl="/getToken",
-            scopes={scope.value: scope.value for scope in Scopes},
+            scopes=scope_descriptions(),
         ),
     ),
     scheme_name="PokerlostOAuth2",

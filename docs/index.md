@@ -1,7 +1,7 @@
 # accountsService documentation
 
-This documentation describes the `accountsService` account/password foundation, its verified
-development workflows, and its current header-authorized Pokerlost HTTP boundary.
+This documentation describes the current template-derived `accountsService` foundation, its
+development workflows, and its planned account ownership. No account or password route is active.
 
 ## Getting started
 

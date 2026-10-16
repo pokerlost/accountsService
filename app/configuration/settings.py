@@ -14,7 +14,6 @@ from .application import ApplicationSettings
 from .database import DatabaseSettings
 from .http import HTTPSettings
 from .logfire import LogfireSettings
-from .password import PasswordSettings
 
 
 class Settings(BaseSettings):
@@ -36,11 +35,10 @@ class Settings(BaseSettings):
     database: DatabaseSettings
     http: HTTPSettings = Field(default_factory=HTTPSettings)
     logfire: LogfireSettings = Field(default_factory=LogfireSettings)
-    password: PasswordSettings = Field(default_factory=PasswordSettings)
 
     @model_validator(mode="after")
-    def validate_service_requirements(self) -> Self:
-        """Fail fast when mandatory service runtime configuration is absent."""
+    def validate_production_observability(self) -> Self:
+        """Fail fast when production telemetry delivery is disabled."""
         if self.application.environment is Environment.PRODUCTION and not (
             self.logfire.enabled and self.logfire.send_to_logfire
         ):

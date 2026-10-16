@@ -51,15 +51,6 @@ operations. `make check-full` adds pre-commit but leaves those explicit operatio
 env PYTHONPATH=app uv run --locked accountsservice run
 ```
 
-The operator CLI also provides a local password-policy benchmark:
-
-```bash
-env PYTHONPATH=app uv run --locked accountsservice benchmark-password
-```
-
-It loads the validated `password` settings and reports only Argon2id setup, hash, verify, and
-dummy-verify timings. It never prints the generated password or PHC string.
-
 `make serve` wraps the configured Gunicorn command:
 
 ```bash

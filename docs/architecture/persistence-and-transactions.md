@@ -28,9 +28,9 @@ entities and public API response models remain separate artifacts. A service tha
 projection defines that focused type in its persistence layer and translates it explicitly.
 
 The template supplies metadata and a narrow repository execution base without generic
-result-reader or projection wrappers. `accountsService` adds concrete account,
-password-credential, and resumable-workflow tables and focused repositories for responsibilities
-defined in `SERVICE.md`.
+result-reader or projection wrappers. `accountsService` currently adds no concrete ORM model or
+repository. Its earlier account/password migration revisions are historical artifacts, not a
+declaration that those tables are active runtime state.
 
 ## Remote calls
 
@@ -51,12 +51,9 @@ uses the same `business_operation_id` and the same semantic payload. The SDK nei
 key nor persists workflow, outbox, or reconciliation state. Detailed client and retry
 composition is documented in `docs/architecture/inter-service-clients.md`.
 
-The current `BusinessOperationRepository.register_or_load()` compares only the persisted operation
-type when a key already exists. Provisioning and synchronization rows persist their account,
-status and exact-scope semantics, but no implemented handler currently compares those subtype
-fields on reuse. The first business stage using them must make that comparison before replay. This
-known operation-level gap is not evidence of semantic payload safety and does not justify restoring
-a platform-wide request fingerprint.
+The prior business-operation repository has been removed from the current foundation. A future
+workflow must prove semantic payload equivalence before replaying a reused operation ID; neither
+the SDK retry policy nor a historical table provides that guarantee.
 
 ## Failure mapping
 
@@ -71,7 +68,10 @@ establish database readiness; see `docs/api/public-surface.md`.
 ## Alembic metadata
 
 Alembic owns schema migrations against the shared `Base.metadata`. Every concrete ORM model must be
-imported through `persistence.database.models` so migration autogeneration can see it. Add a model
-and migration only for a responsibility in `SERVICE.md`, and never rewrite an applied migration.
+imported through `persistence.database.models` so migration autogeneration can see it. The current
+model registry is empty; historical revisions may create legacy tables when upgrading a fresh
+database. Do not autogenerate a drop migration from the empty metadata or run an upgrade against
+production during foundation cleanup. Add a future model and forward migration only for a
+reviewed responsibility in `SERVICE.md`; never rewrite an applied revision.
 The command workflow and review discipline are documented in
 `docs/development/database-migrations.md`.

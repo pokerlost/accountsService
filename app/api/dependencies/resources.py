@@ -7,7 +7,6 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from api.resources import ApplicationResources
-from application.security import Argon2PasswordService
 
 
 def _resolve_application_resources(request: Request) -> ApplicationResources:
@@ -21,17 +20,4 @@ def _resolve_application_resources(request: Request) -> ApplicationResources:
 type ApplicationResourcesDep = Annotated[
     ApplicationResources,
     Depends(_resolve_application_resources),
-]
-
-
-def _resolve_password_service(
-    resources: ApplicationResourcesDep,
-) -> Argon2PasswordService:
-    """Return the lifespan-owned password service."""
-    return resources.password_service
-
-
-type PasswordServiceDep = Annotated[
-    Argon2PasswordService,
-    Depends(_resolve_password_service),
 ]

@@ -1,17 +1,9 @@
-"""Registration facade for concrete SQLAlchemy models."""
+"""Registration facade for concrete SQLAlchemy models.
+
+Import each concrete ``*Model`` here so Alembic discovers its table through ``Base.metadata``.
+The pristine generated service intentionally defines no concrete persistence entity.
+"""
 
 from __future__ import annotations
 
-from .account_model import AccountModel
-from .account_provisioning_operation_model import AccountProvisioningOperationModel
-from .account_synchronization_operation_model import AccountSynchronizationOperationModel
-from .business_operation_model import BusinessOperationModel
-from .password_credential_model import PasswordCredentialModel
-
-__all__ = (
-    "AccountModel",
-    "AccountProvisioningOperationModel",
-    "AccountSynchronizationOperationModel",
-    "BusinessOperationModel",
-    "PasswordCredentialModel",
-)
+__all__: tuple[str, ...] = ()

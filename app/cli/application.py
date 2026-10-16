@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import secrets
-from time import perf_counter
 from typing import Annotated
 
 import typer
 import uvicorn
 
-from application.security import Argon2PasswordService
 from configuration import Settings
 from service import SERVICE_NAME, SERVICE_SLUG
 
@@ -51,33 +48,3 @@ def run(
         reload=reload,
         access_log=False,
     )
-
-
-@cli.command()
-def benchmark_password() -> None:
-    """Measure the configured password policy without printing sensitive values."""
-    settings = Settings()
-    password = secrets.token_urlsafe(24)
-
-    setup_started_at = perf_counter()
-    password_service = Argon2PasswordService(settings.password)
-    setup_elapsed_ms = (perf_counter() - setup_started_at) * 1_000
-
-    hash_started_at = perf_counter()
-    password_hash = password_service.hash_password(password)
-    hash_elapsed_ms = (perf_counter() - hash_started_at) * 1_000
-
-    verify_started_at = perf_counter()
-    verified = password_service.verify_password(password, password_hash)
-    verify_elapsed_ms = (perf_counter() - verify_started_at) * 1_000
-
-    dummy_started_at = perf_counter()
-    password_service.verify_dummy(password)
-    dummy_elapsed_ms = (perf_counter() - dummy_started_at) * 1_000
-
-    if not verified:
-        raise RuntimeError("Password benchmark verification failed")
-    typer.echo(f"argon2id dummy setup: {setup_elapsed_ms:.1f} ms")
-    typer.echo(f"argon2id hash: {hash_elapsed_ms:.1f} ms")
-    typer.echo(f"argon2id verify: {verify_elapsed_ms:.1f} ms")
-    typer.echo(f"argon2id dummy verify: {dummy_elapsed_ms:.1f} ms")

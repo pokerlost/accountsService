@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.16.4,<2",
-    "argon2-cffi>=25.1.0,<26",
     "asyncpg>=0.30.0,<1",
     "fastapi>=0.121.0,<1",
     "gunicorn>=23.0.0,<24",
@@ -52,7 +51,7 @@ select = ["ANN", "ASYNC", "B", "D", "E", "F", "I", "RUF", "SIM", "UP"]
 ignore = ["D107", "D203", "D213", "D417"]
 
 [tool.ruff.lint.isort]
-known-third-party = ["alembic", "argon2"]
+known-third-party = ["alembic"]
 known-first-party = [
     "api",
     "application",

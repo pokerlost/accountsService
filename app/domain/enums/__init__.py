@@ -2,18 +2,7 @@
 
 from __future__ import annotations
 
-from .account_status import AccountStatus
-from .business_operation_state import BusinessOperationState
-from .business_operation_type import BusinessOperationType
 from .environment import Environment
-from .scopes import Scopes
-from .synchronization_mutation_type import SynchronizationMutationType
+from .scopes import Scopes, scope_descriptions
 
-__all__ = (
-    "AccountStatus",
-    "BusinessOperationState",
-    "BusinessOperationType",
-    "Environment",
-    "Scopes",
-    "SynchronizationMutationType",
-)
+__all__ = ("Environment", "Scopes", "scope_descriptions")

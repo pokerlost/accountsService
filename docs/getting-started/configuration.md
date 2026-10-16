@@ -54,22 +54,6 @@ The database URL must include a username, password, host, and database. It is tr
 | `minimum_level` | `ACCOUNTSSERVICE_LOGFIRE__MINIMUM_LEVEL` | Minimum recorded level. |
 | `token` | `ACCOUNTSSERVICE_LOGFIRE__TOKEN` | Optional write token, required when remote delivery is enabled. |
 
-## `password`
-
-| Field | Environment variable | Default | Valid range |
-| --- | --- | --- | --- |
-| `argon2_memory_cost` | `ACCOUNTSSERVICE_PASSWORD__ARGON2_MEMORY_COST` | `65536` KiB | `8192` through `1048576` |
-| `argon2_time_cost` | `ACCOUNTSSERVICE_PASSWORD__ARGON2_TIME_COST` | `3` | `1` through `20` |
-| `argon2_parallelism` | `ACCOUNTSSERVICE_PASSWORD__ARGON2_PARALLELISM` | `4` | `1` through `16` |
-| `argon2_hash_length` | `ACCOUNTSSERVICE_PASSWORD__ARGON2_HASH_LENGTH` | `32` bytes | `16` through `128` |
-| `argon2_salt_length` | `ACCOUNTSSERVICE_PASSWORD__ARGON2_SALT_LENGTH` | `16` bytes | `16` through `64` |
-| `min_length` | `ACCOUNTSSERVICE_PASSWORD__MIN_LENGTH` | `12` characters | `1` through `1024` |
-| `max_length` | `ACCOUNTSSERVICE_PASSWORD__MAX_LENGTH` | `256` characters | `1` through `4096` |
-
-The minimum must not exceed the maximum. Password length counts the exact Python string input;
-accountsService does not trim or normalize it. One lifespan-owned `Argon2PasswordService` uses all
-seven values for validation, hashing, dummy verification, and rehash-policy checks.
-
 Keep the Logfire token and database URL outside source control. Kubernetes supplies them through
 Secret references rather than the chart ConfigMap; see
 `docs/development/containers-and-kubernetes.md`.

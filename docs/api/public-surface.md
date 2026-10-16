@@ -1,7 +1,7 @@
 # Public surface
 
-This is the endpoint manifest for the current `accountsService` HTTP surface. The account,
-password and resumable-workflow foundations are not yet exposed as business routes.
+This is the endpoint manifest for the current `accountsService` HTTP surface. Account and password
+behavior is planned but absent from the current foundation.
 
 | Method and path | `operation_id` | Request | Response |
 | --- | --- | --- | --- |

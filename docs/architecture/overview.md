@@ -64,9 +64,8 @@ outbound target, `docs/architecture/inter-service-clients.md` defines the target
 client, middleware, token-store ownership, retry, and lifecycle extension. Inbound local
 verification uses the application port described in `docs/api/header-authorization.md`.
 
-`accountsService` owns account/password domain values, Argon2id policy, concrete account and
-resumable-workflow tables and focused repositories. Workflow authorization intent is persisted as
-exact global scope sets rather than access categories. These are service-owned foundations, not
-published HTTP operations. There is no current authService call site, so composition intentionally
-contains no outbound client, target settings, credentials, token storage, or applied retry policy.
-Those resources are added only with the first complete application flow that needs them.
+The current runtime owns no account/password domain values, Argon2id service, concrete account
+models or repositories. Historical migrations remain in the tree but are not runtime metadata.
+There is no authService call site, so composition has no outbound client, target settings,
+credentials, token storage or applied retry policy. Add these resources only with a reviewed
+business flow and its data/compatibility contract.
