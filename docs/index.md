@@ -21,6 +21,7 @@ development workflows, and its planned account ownership. No account or password
 
 ## Architecture
 
+- `docs/architecture.md` — current package layout and ownership boundary.
 - `docs/architecture/overview.md` — architecture overview.
 - `docs/architecture/request-lifecycle.md` — request lifecycle.
 - `docs/architecture/persistence-and-transactions.md` — persistence and transactions.

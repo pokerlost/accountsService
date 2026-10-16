@@ -19,7 +19,7 @@ Their exact composition is documented in `docs/development/commands.md`.
 
 ## Persistence and packaging checks
 
-- `alembic check` compares registered SQLAlchemy metadata with the migration state when database models or revisions change.
+- `alembic history` verifies that the three historical revision IDs and parent links remain discoverable without a database. A real upgrade requires a separately authorized disposable PostgreSQL instance.
 - Docker build and an explicit runtime `GET /` smoke check packaging and process startup when that environment-dependent workflow is run.
 - `helm lint` and `helm template` check chart structure and rendered Kubernetes resources.
 - The authoritative OpenAPI generator and installed-SDK end-to-end probe check `pypokerlost` compatibility when an API wire contract changes.

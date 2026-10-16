@@ -4,7 +4,7 @@
 
 ## 🧭 Available now
 
-FastAPI composition, typed settings, safe errors, Logfire instrumentation, PostgreSQL engine and request-transaction mechanism, Alembic, Docker, Helm, and existing quality tooling remain. `GET /` and `GET /getOpenApi` are the only routes. They prove process response, not database readiness. The scope catalog is empty, no protected route uses the optional verifier port, and no outbound authService client is composed.
+FastAPI composition, typed settings, safe errors, standard logging, PostgreSQL engine and request transaction, Alembic, Docker, Helm, and existing quality tooling remain. `GET /`, `GET /getOpenApi`, `/health/live`, and `/health/ready` are the only routes. Readiness checks the required database and returns 503 when unavailable. The scope catalog is empty, no protected route uses the optional verifier port, and no outbound authService client is composed.
 
 ## 📦 Deferred
 
@@ -12,6 +12,6 @@ Account and password models, concrete repositories, Argon2 policy, resumable wor
 
 ## 🗄️ Historical data boundary
 
-Earlier Alembic revisions remain unchanged and may create legacy account tables on a fresh database. Runtime metadata is now empty. No production database was accessed, no destructive migration was made, and `alembic check`/autogenerate must not be interpreted as a safe deletion plan. The private backup captures the removed local source.
+Three historical Alembic revision files moved unchanged into `migrations/versions/`; they may create legacy account tables on a fresh database. Runtime metadata is empty. No production database was accessed, no destructive migration was made, and autogenerate is not a safe deletion plan. The prior local commit and private backup retain the old flat runtime.
 
 See [public surface](../api/public-surface.md) and [persistence](../architecture/persistence-and-transactions.md) for exact current boundaries.

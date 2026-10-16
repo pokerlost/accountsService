@@ -1,9 +1,8 @@
 # accountsService
 
-`accountsService` is a Pokerlost service foundation for a proposed human-account owner. It has the
-template's HTTP, configuration, persistence and observability mechanisms, with no account models,
-password implementation or business routes. Planned ownership and the historical migration limit
-are recorded in [SERVICE.md](SERVICE.md).
+`accountsService` is the local Pokerlost foundation for human accounts and password credentials.
+It has infrastructure HTTP, configuration and persistence wiring, with no account model, password
+implementation, or business route. Ownership and historical migration limits are in [SERVICE.md](SERVICE.md).
 
 Read the [documentation index](docs/index.md) for the complete guide and `AGENTS.md` for normative engineering rules. Python
 3.14 or newer is required.
@@ -13,19 +12,17 @@ Read the [documentation index](docs/index.md) for the complete guide and `AGENTS
 The mandatory private `pypokerlost` dependency requires GitHub SSH read access:
 
 ```bash
-cp .env.example .env
 ssh-add -l
-ssh -T git@github.com
-uv lock
 uv sync --locked
 ```
 
-Replace local placeholders in `.env`; never store secrets or private keys in the repository.
+Supply `DATABASE_URL` through a private process environment when running. `.env.example` is
+documentation; the app does not load `.env` automatically. `uv.lock` is committed.
 
 ## Run
 
 ```bash
-make run
+DATABASE_URL='postgresql+asyncpg://user:password@127.0.0.1:5432/accountsservice' make run
 ```
 
 ## Base endpoints
@@ -34,6 +31,8 @@ make run
 | --- | --- | --- | --- |
 | `GET` | `/` | `getRoot` | `PokerlostResponse[None]` |
 | `GET` | `/getOpenApi` | `getOpenApi` | Raw OpenAPI JSON document |
+| `GET` | `/health/live` | Excluded from OpenAPI | Process liveness |
+| `GET` | `/health/ready` | Excluded from OpenAPI | Database readiness or 503 |
 
 These public infrastructure endpoints accept no body or authentication. Every business operation
 uses `POST /<operationId>` and a typed `PokerlostRequest` JSON body. Protected operations accept an
@@ -50,8 +49,11 @@ Run `make help` for the local tool interface. Regular quality entry points are:
 
 ```bash
 make check
-make pre-commit
+uv build
 ```
 
 Production access requires HTTPS/TLS. The generated Helm ClusterIP is an internal target and must
 remain behind trusted TLS termination.
+
+The local Copier source is a committed `serviceTemplate` ref recorded in `.copier-answers.yml`.
+The `src/accountsService/` package is installed without a workspace `PYTHONPATH`.

@@ -1,14 +1,13 @@
 # Quickstart
 
-Start `accountsService` locally and inspect its two public infrastructure endpoints.
+Start the foundation locally and inspect its infrastructure endpoints. Set a disposable
+`DATABASE_URL` before startup; readiness will return 503 until PostgreSQL is reachable.
 
 ## Run
 
 ```bash
-cp .env.example .env
-uv lock
 uv sync --locked
-make run
+DATABASE_URL='postgresql+asyncpg://user:password@127.0.0.1:5432/accountsservice' make run
 ```
 
 Local development may bind the loopback HTTP server. Production access requires HTTPS/TLS and
@@ -36,9 +35,10 @@ curl --fail-with-body http://127.0.0.1:8000/
 curl --fail-with-body http://127.0.0.1:8000/getOpenApi
 ```
 
-The response is the unmodified FastAPI OpenAPI document. Because the service has zero protected
-operations, the document contains neither a security requirement nor an unused security scheme.
+The response is the unmodified FastAPI OpenAPI document. When a concrete service has protected
+operations, the document contains their standard OAuth2 security metadata. With no protected
+operation, an unused security scheme may be absent.
 
-The current service exposes no business operation. Before adding one, read
+The pristine service exposes no business operation. Before adding one, read
 `docs/api/operation-contract.md`, `docs/api/header-authorization.md`, and
 `docs/api/pokerlost-response.md`.
