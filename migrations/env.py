@@ -7,27 +7,27 @@ import asyncio
 from alembic import context
 from sqlalchemy.engine import Connection
 
-from accountsService.persistence import createEngine
-from accountsService.settings import ServiceSettings
+from accountsservice.persistence import create_engine
+from accountsservice.settings import ServiceSettings
 
 
-def runMigrations(connection: Connection) -> None:
-    """Run the immutable historical revision chain on one connection."""
+def run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=None)
     with context.begin_transaction():
         context.run_migrations()
 
 
-async def runOnlineMigrations() -> None:
-    """Own and dispose a dedicated engine for explicit operator migrations."""
-    engine = createEngine(ServiceSettings())
+async def run_online_migrations() -> None:
+    engine = create_engine(ServiceSettings())
     try:
         async with engine.connect() as connection:
-            await connection.run_sync(runMigrations)
+            await connection.run_sync(run_migrations)
     finally:
         await engine.dispose()
 
 
 if context.is_offline_mode():
-    raise RuntimeError("Offline migrations are not configured for this empty foundation")
-asyncio.run(runOnlineMigrations())
+    raise RuntimeError(
+        "Offline migrations are not configured for this empty foundation"
+    )
+asyncio.run(run_online_migrations())

@@ -23,14 +23,14 @@ latest direct user requirement
 
 ## General architecture
 
-- Keep the current `src/accountsService/` factory, routers, settings, authorization, and persistence
+- Keep the current `src/accountsservice/` factory, routers, settings, authorization, and persistence
   boundaries focused. Add application and domain layers only with implemented behavior.
 - Do not introduce an abstraction without a concrete responsibility.
 - PostgreSQL remains the primary persistence layer.
 - Validate critical settings at startup and fail closed.
 - Do not commit or log secrets.
-- New project-owned private files, variables, and functions use lowerCamelCase; types use PascalCase
-  and constants use UPPER_SNAKE_CASE. Preserve generated paths, framework hooks, published imports,
+- Project-owned Python modules, functions, methods, variables, and fields use snake_case;
+  classes use CapWords and constants use UPPER_SNAKE_CASE. Preserve generated paths, framework hooks, published imports,
   wire/SQL fields, environment names, and override signatures.
 
 ## Pokerlost JSON protocol
@@ -79,10 +79,10 @@ latest direct user requirement
 
 - Pokerlost scopes use dot-separated lowerCamelCase segments and match
   `^[a-z][A-Za-z0-9]*(\.[a-z][A-Za-z0-9]*)+$`. Wildcards and category-based bypasses are forbidden.
-- Keep the service-owned catalog in `src/accountsService/scopes.py` as the sole local `Scopes` enum.
+- Keep the service-owned catalog in `src/accountsservice/scopes.py` as the sole local `Scopes` enum.
   SDK-owned shared wire enums remain under `pypokerlost/enums/`.
 - A protected route declares every exact scope through
-  `Security(authorizePokerlostRequest, scopes=[...])`. A public route has no security dependency.
+  `Security(authorize_pokerlost_request, scopes=[...])`. A public route has no security dependency.
 - `PokerlostTokenVerifier` is the transport-independent application port for local verification.
   A concrete service supplies a real verifier at composition only when its implemented stage
   protects a route. The template does not provide a fake verifier or remote verification call.
@@ -185,9 +185,8 @@ PokerlostRetryMiddleware
 - Update `docs/api/public-surface.md` for every implemented operation. Wire changes also update the
   response, header authorization, operation, and OpenAPI pages.
 - Use the repository `Makefile`, `uv`, Ruff, mypy, Alembic, Docker, and Helm conventions.
-- Do not add or modify tests unless the direct user task explicitly requests tests. Do not add
-  rendered-template tests or make ordinary quality targets depend on an unrequested test suite.
+- Add focused technical and regression tests for changed behavior; ordinary quality targets run the active infrastructure suite.
 - Do not add `scripts/check_*.py`, rendered-template alignment checkers, renamed equivalents, or
   hidden checker logic in Make/pre-commit. Use disposable direct commands for one-time inspection.
-- Before handoff, run the available non-test lint, format, type, docs, build, migration-history
+- Before handoff, run the available lint, format, type, test, docs, build, migration-history
   and startup checks; report every unavailable or failed check.

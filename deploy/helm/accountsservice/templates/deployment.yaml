@@ -27,7 +27,7 @@ spec:
           command:
             - uvicorn
           args:
-            - accountsService.app:createApp
+            - accountsservice.app:create_app
             - --factory
             - --host
             - 0.0.0.0

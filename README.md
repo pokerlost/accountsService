@@ -55,5 +55,7 @@ uv build
 Production access requires HTTPS/TLS. The generated Helm ClusterIP is an internal target and must
 remain behind trusted TLS termination.
 
-The local Copier source is a committed `serviceTemplate` ref recorded in `.copier-answers.yml`.
-The `src/accountsService/` package is installed without a workspace `PYTHONPATH`.
+The canonical Copier source URL and immutable ref are recorded in `.copier-answers.yml`; updates do not require a sibling template checkout.
+The `src/accountsservice/` package is installed without a workspace `PYTHONPATH`.
+
+Technical HTTP tests run in `make check`. Positive PostgreSQL readiness and migrations require disposable storage. CI source checks run on PRs without secrets; the private SDK build is gated by reviewed SHA and the protected `sdk-build` environment. The Dockerfile consumes the SDK token through a BuildKit secret.

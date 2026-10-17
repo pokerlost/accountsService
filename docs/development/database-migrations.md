@@ -4,7 +4,7 @@ The three historical accountsService revisions were moved byte-for-byte from `al
 
 ## 🧭 Commands and ownership
 
-`alembic.ini` uses `migrations/`; `migrations/env.py` takes its connection from the installed `accountsService` package and the required `DATABASE_URL`. The empty foundation has no autogenerate metadata. Inspect history without a database:
+`alembic.ini` uses `migrations/`; `migrations/env.py` takes its connection from the installed `accountsservice` package and the required `DATABASE_URL`. The empty foundation has no autogenerate metadata. Inspect history without a database:
 
 ```bash
 uv run --locked alembic history
