@@ -1,7 +1,3 @@
-# Pull request
-
-Describe the focused change and its actual checks.
-
 ## Why
 
 State the observed problem or task, with a link when one exists.
