@@ -59,3 +59,16 @@ The canonical Copier source URL and immutable ref are recorded in `.copier-answe
 The `src/accountsservice/` package is installed without a workspace `PYTHONPATH`.
 
 Technical HTTP tests run in `make check`. Positive PostgreSQL readiness and migrations require disposable storage. CI source checks run on PRs without secrets; the private SDK build is gated by reviewed SHA and the protected `sdk-build` environment. The Dockerfile consumes the SDK token through a BuildKit secret.
+
+## Tested foundation commands
+
+The shared template owns `Makefile`, `tests/foundation/` and `deploy/chart/`. Project-owned tests,
+settings, scopes and migration history survive updates. `make test-unit` reports isolated
+coverage; `make test` also measures enabled integration before the full 100% gate. Missing owned
+paths remain visible in the report. `make build image test-image` uses the canonical wheel
+container graph and requires the separately approved SDK-only BuildKit secret.
+
+`make chart-check chart` validates/packages the shared chart. `make deploy-local` and
+`make undeploy-local` operate only the explicit disposable Kind contour. External deployment
+requires an approved destination and tested image manifest digest. Private runtime CI requires
+a full reviewed SHA and the SDK-only App approval gate; skipped runtime checks do not pass.
