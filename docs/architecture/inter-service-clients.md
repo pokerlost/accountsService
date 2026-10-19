@@ -84,10 +84,9 @@ five-second logical budget. It retries canonical connection/timeout failures and
 Cancellation propagates immediately.
 
 Transport retry is not business idempotency. Every replay-safe mutation needs the same
-`business_operation_id`, semantic payload, operation and target. The current generic business
-operation repository compares only operation type on key reuse; a later implementing handler must
-also compare its persisted subtype fields before replay. Middleware never creates business IDs or
-owns workflow persistence.
+`business_operation_id`, semantic payload, operation and target. A future account workflow must
+prove persisted semantic equivalence before replay; the current foundation has no business
+operation repository. Middleware never creates business IDs or owns workflow persistence.
 
 Never keep a PostgreSQL transaction open during acquisition, refresh, a target attempt or retry
 backoff. Secrets and raw request/response bodies do not enter representations, errors or telemetry.

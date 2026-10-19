@@ -19,14 +19,13 @@ Their exact composition is documented in `docs/development/commands.md`.
 
 ## Persistence and packaging checks
 
-- `alembic check` compares registered SQLAlchemy metadata with the migration state when database models or revisions change.
+- `alembic history` verifies that the three historical revision IDs and parent links remain discoverable without a database. A real upgrade requires a separately authorized disposable PostgreSQL instance.
 - Docker build and an explicit runtime `GET /` smoke check packaging and process startup when that environment-dependent workflow is run.
 - `helm lint` and `helm template` check chart structure and rendered Kubernetes resources.
 - The authoritative OpenAPI generator and installed-SDK end-to-end probe check `pypokerlost` compatibility when an API wire contract changes.
-- When a concrete outbound integration changes, use a disposable probe unless the direct task
-  explicitly requests permanent tests. Inspect final public SDK imports, target settings, lifespan
-  start/stop, header injection, explicit safe retry and the absence of a database transaction
-  around remote I/O.
+- When a concrete outbound integration changes, add a focused regression test. Inspect final
+  public SDK imports, target settings, lifespan start/stop, header injection, explicit safe retry,
+  and the absence of a database transaction around remote I/O.
 - Protected-route probes cover missing/malformed bearer authentication, invalid/expired token,
   missing exact scope, exact-scope success, handler exclusion and canonical envelopes.
 
@@ -39,7 +38,7 @@ daemons, credentials, network access, or external checkouts. See
 
 These checks detect specific formatting, typing, syntax, documentation, metadata, packaging, rendering, and compatibility failures. They are not proof of business correctness, production readiness, or security.
 
-The generated repository does not include a permanent test suite unless one is explicitly
-requested. It does not claim coverage, a security audit, performance guarantees or CI/CD. Do not
-add or publish such claims unless the corresponding maintained workflow exists and its current
-result was actually verified.
+The technical HTTP suite covers the active infrastructure contract. The repository does not
+claim a security audit, performance guarantees, or production readiness. The private SDK build
+requires a reviewed SHA, protected environment, and repository-scoped secrets; a workflow
+definition alone is not a passed hosted run.

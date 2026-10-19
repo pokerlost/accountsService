@@ -1,7 +1,7 @@
 # accountsService documentation
 
-This documentation describes the `accountsService` account/password foundation, its verified
-development workflows, and its current header-authorized Pokerlost HTTP boundary.
+This documentation describes the current template-derived `accountsService` foundation, its
+development workflows, and its planned account ownership. No account or password route is active.
 
 ## Getting started
 
@@ -21,6 +21,7 @@ development workflows, and its current header-authorized Pokerlost HTTP boundary
 
 ## Architecture
 
+- `docs/architecture.md` — current package layout and ownership boundary.
 - `docs/architecture/overview.md` — architecture overview.
 - `docs/architecture/request-lifecycle.md` — request lifecycle.
 - `docs/architecture/persistence-and-transactions.md` — persistence and transactions.

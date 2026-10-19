@@ -1,5 +1,9 @@
 # accountsService
 
+The current checkout is a template-derived foundation with only infrastructure routes. Account,
+password, and workflow behavior is planned in `SERVICE.md`; do not reintroduce it as a hidden
+model, route, or migration. Existing Alembic revisions remain historical and must not be rewritten.
+
 Before every task:
 
 1. Read `AGENTS.md` and `SERVICE.md`.
@@ -19,14 +23,14 @@ latest direct user requirement
 
 ## General architecture
 
-- Keep API, application, domain, configuration, observability, persistence, and CLI
-  responsibilities separated.
+- Keep the current `src/accountsservice/` factory, routers, settings, authorization, and persistence
+  boundaries focused. Add application and domain layers only with implemented behavior.
 - Do not introduce an abstraction without a concrete responsibility.
 - PostgreSQL remains the primary persistence layer.
 - Validate critical settings at startup and fail closed.
 - Do not commit or log secrets.
-- New project-owned private files, variables, and functions use lowerCamelCase; types use PascalCase
-  and constants use UPPER_SNAKE_CASE. Preserve generated paths, framework hooks, published imports,
+- Project-owned Python modules, functions, methods, variables, and fields use snake_case;
+  classes use CapWords and constants use UPPER_SNAKE_CASE. Preserve generated paths, framework hooks, published imports,
   wire/SQL fields, environment names, and override signatures.
 
 ## Pokerlost JSON protocol
@@ -75,7 +79,7 @@ latest direct user requirement
 
 - Pokerlost scopes use dot-separated lowerCamelCase segments and match
   `^[a-z][A-Za-z0-9]*(\.[a-z][A-Za-z0-9]*)+$`. Wildcards and category-based bypasses are forbidden.
-- Keep the service-owned catalog in `app/domain/enums/scopes.py` as the sole local `Scopes` enum.
+- Keep the service-owned catalog in `src/accountsservice/scopes.py` as the sole local `Scopes` enum.
   SDK-owned shared wire enums remain under `pypokerlost/enums/`.
 - A protected route declares every exact scope through
   `Security(authorize_pokerlost_request, scopes=[...])`. A public route has no security dependency.
@@ -83,7 +87,7 @@ latest direct user requirement
   A concrete service supplies a real verifier at composition only when its implemented stage
   protects a route. The template does not provide a fake verifier or remote verification call.
 - The dependency uses FastAPI's standard OAuth2 client-credentials security model with
-  `auto_error=False`, parses one bearer header, verifies locally for `SERVICE_NAME`, compares the
+  `auto_error=False`, parses one bearer header, verifies locally for the service audience, compares the
   returned audience, and requires every exact route scope.
 - Missing/malformed authentication, invalid token, expired token, and insufficient scope use the
   canonical `POKERLOST_*` application errors and central `PokerlostResponse` handler.
@@ -147,8 +151,8 @@ PokerlostRetryMiddleware
 - Never capture or log request/response bodies containing `client_secret`, `access_token`,
   `refresh_token`, passwords, login grants, or private keys.
 - Keep FastAPI instrumentation body/header capture disabled and HTTP client debug logging disabled.
-- Generate request IDs only on the server. Do not read or return request-correlation transport
-  metadata as a public contract.
+- Accept only bounded validated `X-Request-ID` values; generate an ID when absent or invalid,
+  propagate it through the response, and never log request bodies or credentials.
 
 ## Configuration and deployment
 
@@ -164,7 +168,7 @@ PokerlostRetryMiddleware
 
 - Application values and ports remain transport-independent. Ports do not expose FastAPI,
   SQLAlchemy sessions, or concrete SDK clients.
-- Reuse `Command`, `Query`, `Result`, and the structural asynchronous `Handler` Protocol.
+- Introduce commands, queries, results, or Protocol ports only for an implemented scenario.
 - Routes translate API schemas to application values; public models do not double as domain or ORM
   models.
 - A request-owned SQLAlchemy session owns one transaction. Routes, handlers, repositories, and
@@ -181,9 +185,8 @@ PokerlostRetryMiddleware
 - Update `docs/api/public-surface.md` for every implemented operation. Wire changes also update the
   response, header authorization, operation, and OpenAPI pages.
 - Use the repository `Makefile`, `uv`, Ruff, mypy, Alembic, Docker, and Helm conventions.
-- Do not add or modify tests unless the direct user task explicitly requests tests. Do not add
-  rendered-template tests or make ordinary quality targets depend on an unrequested test suite.
+- Add focused technical and regression tests for changed behavior; ordinary quality targets run the active infrastructure suite.
 - Do not add `scripts/check_*.py`, rendered-template alignment checkers, renamed equivalents, or
   hidden checker logic in Make/pre-commit. Use disposable direct commands for one-time inspection.
-- Before handoff, run `make format`, `make check`, `make pre-commit`, and report every unavailable
-  or failed check.
+- Before handoff, run the available lint, format, type, test, docs, build, migration-history
+  and startup checks; report every unavailable or failed check.
