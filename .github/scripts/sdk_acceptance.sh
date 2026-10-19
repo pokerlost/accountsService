@@ -56,7 +56,7 @@ case "${1:-}" in
       docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
         --network host "${database_args[@]}" "$package:candidate" \
         python -m alembic heads > "$report/alembic-heads.txt" 2>&1
-      sed -nE 's/^([a-f0-9]+) .*$/\1/p' "$report/alembic-heads.txt" | sort > "$report/expected-revisions.txt"
+      sed -nE 's/^([[:alnum:]_]+) .*$/\1/p' "$report/alembic-heads.txt" | sort > "$report/expected-revisions.txt"
     fi
     container=''
     trap 'if [ -n "$container" ]; then docker rm -f "$container" >/dev/null; fi' EXIT
