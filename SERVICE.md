@@ -4,7 +4,7 @@
 
 ## 🧭 Foundation available
 
-The committed `serviceTemplate` provides FastAPI composition, typed configuration, safe Pokerlost errors, optional bearer-verifier port, PostgreSQL engine/session ownership, Alembic, logging, Docker, and Helm. `GET /`, `GET /getOpenApi`, `/health/live`, and `/health/ready` are the only routes. No account/password entities, concrete repositories, handlers, scopes, outbound authService client, or product endpoint are registered. The database setting is required by this specialized template, but no connection is opened on module import.
+The committed `serviceTemplate` provides FastAPI composition, typed configuration, safe Pokerlost errors, optional bearer-verifier port, PostgreSQL engine/session ownership, Alembic, logging, Docker, and Helm. `GET /`, `GET /getOpenApi`, `GET /health/live`, and `GET /health/ready` are core infrastructure routes. Optional internal `GET /metrics` is enabled by default and excluded from OpenAPI. No account/password entities, concrete repositories, handlers, scopes, outbound authService client, or product endpoint are registered. The database setting is required by this specialized template, but no connection is opened on module import.
 
 Runtime source lives in `src/accountsservice/`. Rules, the empty exact scope catalog, and the three historical revisions in `migrations/versions/` are project-owned. Historical revisions remain unchanged; moving source files does not apply a database migration or establish release status.
 
