@@ -6,9 +6,9 @@
 
 The committed `serviceTemplate` provides FastAPI composition, typed configuration, safe Pokerlost errors, optional bearer-verifier port, PostgreSQL engine/session ownership, Alembic, logging, Docker, and Helm. `GET /`, `GET /getOpenApi`, `/health/live`, and `/health/ready` are the only routes. No account/password entities, concrete repositories, handlers, scopes, outbound authService client, or product endpoint are registered. The database setting is required by this specialized template, but no connection is opened on module import.
 
-The committed `serviceTemplate` source has been applied to `src/accountsService/` after the earlier foundation cleanup. Project-owned rules, the empty exact scope catalog, and three historical revisions were preserved; those revision files moved byte-for-byte into `migrations/versions/`. This file migration is local and is not a release or a database upgrade. The retired flat `app/` foundation remains recoverable from the prior local commit and private backup.
+Runtime source lives in `src/accountsservice/`. Rules, the empty exact scope catalog, and the three historical revisions in `migrations/versions/` are project-owned. Historical revisions remain unchanged; moving source files does not apply a database migration or establish release status.
 
-Existing Alembic revisions are historical artifacts from an earlier account implementation. They remain immutable and may still create old tables when run on a fresh database; the current ORM metadata does not claim those tables. Do not run autogenerate, upgrade or destructive cleanup against production as part of this foundation task.
+Existing Alembic revisions are historical artifacts from an earlier account implementation. They remain immutable and may still create old tables when run on a fresh database; the current ORM metadata does not claim those tables. Do not run autogenerate, upgrade or destructive cleanup against production without a separately reviewed migration plan.
 
 ## 📦 Planned ownership
 
@@ -25,4 +25,4 @@ These are requirements for a future password implementation, **not current confi
 - The prior candidate password length was 12–256 characters. Argon2id baseline was 65536 KiB memory, time cost 3, parallelism 4, hash length 32 and salt length 16. Revalidate this policy when implementing; no Argon2 dependency is installed now.
 - Unknown accounts need a safe verification path, and reused business-operation IDs must compare semantic payloads before any remote retry.
 
-See [public surface](docs/api/public-surface.md) and [project status](docs/project/status.md) for the current implementation. The private backup records the removed local code; it is not a deployment migration.
+See [public surface](docs/api/public-surface.md) and [project status](docs/project/status.md) for the current implementation. Restoring earlier source code is not a database rollback plan.
