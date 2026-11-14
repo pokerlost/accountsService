@@ -8,6 +8,7 @@ development workflows, and its planned account ownership. No account or password
 - `docs/getting-started/installation.md` — installation.
 - `docs/getting-started/quickstart.md` — quickstart.
 - `docs/getting-started/configuration.md` — configuration.
+- `docs/environments.md` — deployment environment and telemetry contour.
 
 ## API
 
