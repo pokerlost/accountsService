@@ -9,7 +9,7 @@ Read the [documentation index](docs/index.md) for the complete guide and `AGENTS
 
 ## 🚀 Install
 
-The mandatory private `pypokerlost` dependency requires GitHub SSH read access:
+The mandatory pinned `pypokerlost` dependency uses the configured GitHub SSH transport:
 
 ```bash
 ssh-add -l
